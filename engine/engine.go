@@ -3,6 +3,7 @@ package engine
 import (
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 )
 
@@ -28,6 +29,7 @@ func New(root string) (*Engine, error) {
 	engine.Stacks = stackFiles
 	engine.Roles = roleFiles
 
+	engine.DryRun = true
 	engine.PythonPath = "/usr/bin/python"
 	engine.RubyPath = "/usr/bin/ruby"
 
@@ -38,6 +40,7 @@ type Engine struct {
 	Root       string
 	PythonPath string
 	RubyPath   string
+	DryRun     bool
 	Logic      []os.FileInfo
 	Stacks     []os.FileInfo
 	Roles      []os.FileInfo
@@ -45,4 +48,13 @@ type Engine struct {
 
 func (e *Engine) ReadDir(dirname string) ([]os.FileInfo, error) {
 	return ioutil.ReadDir(path.Join(e.Root, dirname))
+}
+
+func (e *Engine) RunLogic(name string) ([]byte, error) {
+	logicPath := path.Join(e.Root, "logic", name, "__init__.py")
+	if e.DryRun {
+		return []byte(e.PythonPath + " " + logicPath), nil
+	}
+
+	return exec.Command(e.PythonPath, logicPath).CombinedOutput()
 }
