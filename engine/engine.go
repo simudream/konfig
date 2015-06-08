@@ -1,3 +1,4 @@
+// Package engine provides engine struct.
 package engine
 
 import (
@@ -14,20 +15,21 @@ import (
 	"github.com/resourced/configurator/stack"
 )
 
+// New is the constructor for a new engine.
 func New(root string) (*Engine, error) {
 	engine := &Engine{Root: root}
 
-	logicDirs, err := engine.ReadDir("logic")
+	logicDirs, err := engine.readDir("logic")
 	if err != nil {
 		return nil, err
 	}
 
-	stackFiles, err := engine.ReadDir("stacks")
+	stackFiles, err := engine.readDir("stacks")
 	if err != nil {
 		return nil, err
 	}
 
-	roleFiles, err := engine.ReadDir("roles")
+	roleFiles, err := engine.readDir("roles")
 	if err != nil {
 		return nil, err
 	}
@@ -46,21 +48,34 @@ func New(root string) (*Engine, error) {
 }
 
 type Engine struct {
-	Root       string
+	// Root is the root of project directory.
+	Root string
+
+	// PythonPath is the path to python executable.
 	PythonPath string
-	PipPath    string
-	RubyPath   string
+
+	// PipPath is the path to pip executable.
+	PipPath string
+
+	// RubyPath is the path to ruby executable.
+	RubyPath string
+
+	// BundlePath is the path to bundle executable.
 	BundlePath string
-	DryRun     bool
-	Logic      []os.FileInfo
-	Stacks     []os.FileInfo
-	Roles      []os.FileInfo
+
+	// DryRun is the dry run flag, default is true.
+	DryRun bool
+
+	Logic  []os.FileInfo
+	Stacks []os.FileInfo
+	Roles  []os.FileInfo
 }
 
-func (e *Engine) ReadDir(dirname string) ([]os.FileInfo, error) {
+func (e *Engine) readDir(dirname string) ([]os.FileInfo, error) {
 	return ioutil.ReadDir(path.Join(e.Root, dirname))
 }
 
+// RunLogic allows engine to execute one logic layer.
 func (e *Engine) RunLogic(name string) ([]byte, error) {
 	pythonExecPath := path.Join(e.Root, "logic", name, "__init__.py")
 	_, pyErr := os.Stat(pythonExecPath)
@@ -81,6 +96,7 @@ func (e *Engine) RunLogic(name string) ([]byte, error) {
 	return nil, nil
 }
 
+// InstallPythonLogicDependencies allows engine to installs dependencies for a logic written in python.
 func (e *Engine) InstallPythonLogicDependencies(name string) ([]byte, error) {
 	reqPath := path.Join(e.Root, "logic", name, "requirements.txt")
 	if e.DryRun {
@@ -90,6 +106,7 @@ func (e *Engine) InstallPythonLogicDependencies(name string) ([]byte, error) {
 	return exec.Command(e.PipPath, "install", "-r", reqPath).CombinedOutput()
 }
 
+// RunPythonLogic allows engine to run a logic written in python.
 func (e *Engine) RunPythonLogic(name string) ([]byte, error) {
 	execPath := path.Join(e.Root, "logic", name, "__init__.py")
 	if e.DryRun {
@@ -99,6 +116,7 @@ func (e *Engine) RunPythonLogic(name string) ([]byte, error) {
 	return exec.Command(e.PythonPath, execPath).CombinedOutput()
 }
 
+// InstallRubyLogicDependencies allows engine to installs dependencies for a logic written in ruby.
 func (e *Engine) InstallRubyLogicDependencies(name string) ([]byte, error) {
 	logicPath := path.Join(e.Root, "logic", name)
 	if e.DryRun {
@@ -111,6 +129,7 @@ func (e *Engine) InstallRubyLogicDependencies(name string) ([]byte, error) {
 	return cmd.CombinedOutput()
 }
 
+// RunRubyLogic allows engine to run a logic written in ruby.
 func (e *Engine) RunRubyLogic(name string) ([]byte, error) {
 	execPath := path.Join(e.Root, "logic", name, name+".rb")
 	if e.DryRun {
@@ -120,6 +139,7 @@ func (e *Engine) RunRubyLogic(name string) ([]byte, error) {
 	return exec.Command(e.RubyPath, execPath).CombinedOutput()
 }
 
+// ReadStack allows engine to read a particular stack defined in TOML file.
 func (e *Engine) ReadStack(name string) (stack.Stack, error) {
 	var stk stack.Stack
 
@@ -135,6 +155,7 @@ func (e *Engine) ReadStack(name string) (stack.Stack, error) {
 	return stk, nil
 }
 
+// RunStack allows engine to run a particular stack.
 func (e *Engine) RunStack(name string) ([]byte, error) {
 	stk, err := e.ReadStack(name)
 	if err != nil {
@@ -160,6 +181,7 @@ func (e *Engine) RunStack(name string) ([]byte, error) {
 	return allOutput, nil
 }
 
+// ReadRole allows engine to read a particular role defined in TOML file.
 func (e *Engine) ReadRole(name string) (role.Role, error) {
 	var rl role.Role
 
@@ -175,6 +197,7 @@ func (e *Engine) ReadRole(name string) (role.Role, error) {
 	return rl, nil
 }
 
+// RunRole allows engine to run a particular role.
 func (e *Engine) RunRole(name string) ([]byte, error) {
 	rl, err := e.ReadRole(name)
 	if err != nil {
