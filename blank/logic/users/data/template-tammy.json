@@ -1,0 +1,5 @@
+{
+    "name": "tammy",
+    "uid": 100,
+    "groups": [100, "developers", "devops"]
+}
