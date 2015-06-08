@@ -17,6 +17,15 @@ class Base
         File.expand_path(File.dirname(__FILE__))
     end
 
+    def exec_or_print(command)
+        if @dry_run
+            puts command
+            return 0
+        else
+            return `#{command}`
+        end
+    end
+
     def init; end
     def run; end
 
