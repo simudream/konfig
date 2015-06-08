@@ -1,0 +1,7 @@
+steps = [
+    "stacks/helloworld.toml",
+    "stacks/helloworld.toml",
+]
+
+[matchers]
+hostname = ["=", "$HOSTNAME"]

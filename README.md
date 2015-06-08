@@ -4,12 +4,15 @@ Config management.
 
 /roles
     prod-docker.toml
-        hostname_matcher = ["=", "prod-docker-1"]
-        tags_matcher = ["aaa", "bbb"]
         steps = [
             "stacks/users.toml",
             "stacks/docker.toml"
         ]
+
+        [matchers]
+        hostname = ["=", "$HOSTNAME"]
+        tags = ["aaa", "bbb"]
+
 
     staging-docker.toml
 
