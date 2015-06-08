@@ -31,6 +31,7 @@ func New(root string) (*Engine, error) {
 
 	engine.DryRun = true
 	engine.PythonPath = "/usr/bin/python"
+	engine.PipPath = "/usr/local/bin/pip"
 	engine.RubyPath = "/usr/bin/ruby"
 
 	return engine, nil
@@ -39,6 +40,7 @@ func New(root string) (*Engine, error) {
 type Engine struct {
 	Root       string
 	PythonPath string
+	PipPath    string
 	RubyPath   string
 	DryRun     bool
 	Logic      []os.FileInfo
@@ -48,6 +50,15 @@ type Engine struct {
 
 func (e *Engine) ReadDir(dirname string) ([]os.FileInfo, error) {
 	return ioutil.ReadDir(path.Join(e.Root, dirname))
+}
+
+func (e *Engine) InstallLogicDependencies(name string) ([]byte, error) {
+	reqPath := path.Join(e.Root, "logic", name, "requirements.txt")
+	if e.DryRun {
+		return []byte(e.PipPath + " install -r " + reqPath), nil
+	}
+
+	return exec.Command(e.PipPath, "install", "-r", reqPath).CombinedOutput()
 }
 
 func (e *Engine) RunLogic(name string) ([]byte, error) {

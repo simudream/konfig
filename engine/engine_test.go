@@ -38,4 +38,37 @@ func TestRunLogic(t *testing.T) {
 	if !strings.HasSuffix(string(output), "__init__.py") {
 		t.Fatalf("RunLogic should contain __init__.py in dry run mode. Output: %v", string(output))
 	}
+
+	engine.DryRun = false
+	output, err = engine.RunLogic("helloworld")
+	if err != nil {
+		t.Fatalf("RunLogic should not fail in live mode. Error: %v", err)
+	}
+	if !strings.Contains(string(output), "Hello World") {
+		t.Fatalf("RunLogic should contain Hello World in live mode. Output: %v", string(output))
+	}
+}
+
+func TestInstallLogicDependencies(t *testing.T) {
+	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/blank"))
+	if err != nil {
+		t.Fatalf("Creating new engine should not fail. Error: %v", err)
+	}
+
+	output, err := engine.InstallLogicDependencies("ignore-me")
+	if err != nil {
+		t.Fatalf("RunLogic should not fail in dry run mode. Error: %v", err)
+	}
+	if !strings.Contains(string(output), "/pip") {
+		t.Fatalf("RunLogic should contain python command in dry run mode. Output: %v", string(output))
+	}
+	if !strings.HasSuffix(string(output), "requirements.txt") {
+		t.Fatalf("RunLogic should contain requirements.txt in dry run mode. Output: %v", string(output))
+	}
+
+	engine.DryRun = false
+	output, _ = engine.InstallLogicDependencies("helloworld")
+	if !strings.Contains(string(output), "Installing collected packages: requests") {
+		t.Fatalf("RunLogic should contain 'Installing collected packages: requests' in live mode. Output: %v", string(output))
+	}
 }
