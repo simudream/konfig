@@ -33,6 +33,7 @@ func New(root string) (*Engine, error) {
 	engine.PythonPath = "/usr/bin/python"
 	engine.PipPath = "/usr/local/bin/pip"
 	engine.RubyPath = "/usr/bin/ruby"
+	engine.BundlePath = "bundle"
 
 	return engine, nil
 }
@@ -42,6 +43,7 @@ type Engine struct {
 	PythonPath string
 	PipPath    string
 	RubyPath   string
+	BundlePath string
 	DryRun     bool
 	Logic      []os.FileInfo
 	Stacks     []os.FileInfo
@@ -52,7 +54,7 @@ func (e *Engine) ReadDir(dirname string) ([]os.FileInfo, error) {
 	return ioutil.ReadDir(path.Join(e.Root, dirname))
 }
 
-func (e *Engine) InstallLogicDependencies(name string) ([]byte, error) {
+func (e *Engine) InstallPythonLogicDependencies(name string) ([]byte, error) {
 	reqPath := path.Join(e.Root, "logic", name, "requirements.txt")
 	if e.DryRun {
 		return []byte(e.PipPath + " install -r " + reqPath), nil
@@ -62,10 +64,22 @@ func (e *Engine) InstallLogicDependencies(name string) ([]byte, error) {
 }
 
 func (e *Engine) RunLogic(name string) ([]byte, error) {
-	logicPath := path.Join(e.Root, "logic", name, "__init__.py")
+	execPath := path.Join(e.Root, "logic", name, "__init__.py")
 	if e.DryRun {
-		return []byte(e.PythonPath + " " + logicPath), nil
+		return []byte(e.PythonPath + " " + execPath), nil
 	}
 
-	return exec.Command(e.PythonPath, logicPath).CombinedOutput()
+	return exec.Command(e.PythonPath, execPath).CombinedOutput()
+}
+
+func (e *Engine) InstallRubyLogicDependencies(name string) ([]byte, error) {
+	logicPath := path.Join(e.Root, "logic", name)
+	if e.DryRun {
+		return []byte("cd " + logicPath + "; " + e.BundlePath), nil
+	}
+
+	cmd := exec.Command(e.BundlePath)
+	cmd.Path = logicPath
+
+	return cmd.CombinedOutput()
 }
