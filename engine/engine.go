@@ -174,3 +174,40 @@ func (e *Engine) ReadRole(name string) (role.Role, error) {
 
 	return rl, nil
 }
+
+func (e *Engine) RunRole(name string) ([]byte, error) {
+	rl, err := e.ReadRole(name)
+	if err != nil {
+		return nil, err
+	}
+
+	allOutput := make([]byte, 0)
+
+	for _, step := range rl.Steps {
+		if strings.HasPrefix(step, "stacks/") {
+			stackName := strings.Replace(step, "stacks/", "", -1)
+
+			output, err := e.RunStack(stackName)
+			if err != nil {
+				return output, err
+			}
+
+			allOutput = append(allOutput, output...)
+			allOutput = append(allOutput, []byte("\n")...)
+		}
+
+		if strings.HasPrefix(step, "logic/") {
+			logicName := strings.Replace(step, "logic/", "", -1)
+
+			output, err := e.RunLogic(logicName)
+			if err != nil {
+				return output, err
+			}
+
+			allOutput = append(allOutput, output...)
+			allOutput = append(allOutput, []byte("\n")...)
+		}
+	}
+
+	return allOutput, nil
+}

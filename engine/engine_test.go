@@ -153,3 +153,15 @@ func TestReadRole(t *testing.T) {
 		t.Fatalf("role steps[0] should == stacks/helloworld.toml. Step: %v", rl.Steps[0])
 	}
 }
+
+func TestRunRole(t *testing.T) {
+	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/tests/project"))
+	if err != nil {
+		t.Fatalf("Creating new engine should not fail. Error: %v", err)
+	}
+
+	_, err = engine.RunRole("helloworld-staging.toml")
+	if err != nil {
+		t.Fatalf("RunRole should not fail. Error: %v", err)
+	}
+}
