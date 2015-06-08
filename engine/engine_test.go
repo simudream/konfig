@@ -152,6 +152,16 @@ func TestReadRole(t *testing.T) {
 	if rl.Steps[0] != "stacks/helloworld.toml" {
 		t.Fatalf("role steps[0] should == stacks/helloworld.toml. Step: %v", rl.Steps[0])
 	}
+
+	if len(rl.Matchers.Hostname) == 0 {
+		t.Fatalf("role hostname matcher should not be empty. Length: %v", len(rl.Matchers.Hostname))
+	}
+	if rl.Matchers.Hostname[0] != "=" {
+		t.Fatalf("role hostname matcher operator should be =. Operator: %v", rl.Matchers.Hostname[0])
+	}
+	if rl.Matchers.Hostname[1] != "$HOSTNAME" {
+		t.Fatalf("role hostname matcher value should be $HOSTNAME. Value: %v", rl.Matchers.Hostname[1])
+	}
 }
 
 func TestRunRole(t *testing.T) {
