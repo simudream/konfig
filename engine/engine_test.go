@@ -127,8 +127,29 @@ func TestRunStack(t *testing.T) {
 		t.Fatalf("Creating new engine should not fail. Error: %v", err)
 	}
 
-	_, err = engine.RunStack("helloworld")
+	allOutput, err := engine.RunStack("helloworld")
 	if err != nil {
 		t.Fatalf("RunStack should not fail. Error: %v", err)
+	}
+	if !strings.Contains(string(allOutput), "python") || !strings.Contains(string(allOutput), "ruby") || !strings.Contains(string(allOutput), "helloworld-py/__init__.py") || !strings.Contains(string(allOutput), "helloworld-rb.rb") {
+		t.Fatalf("RunStack output should make sense. Output:\n%v", string(allOutput))
+	}
+}
+
+func TestReadRole(t *testing.T) {
+	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/tests/project"))
+	if err != nil {
+		t.Fatalf("Creating new engine should not fail. Error: %v", err)
+	}
+
+	rl, err := engine.ReadRole("helloworld-staging.toml")
+	if err != nil {
+		t.Fatalf("ReadRole should not fail. Error: %v", err)
+	}
+	if len(rl.Steps) != 2 {
+		t.Fatalf("role steps should == 2. Length: %v", len(rl.Steps))
+	}
+	if rl.Steps[0] != "stacks/helloworld.toml" {
+		t.Fatalf("role steps[0] should == stacks/helloworld.toml. Step: %v", rl.Steps[0])
 	}
 }

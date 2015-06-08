@@ -4,13 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path"
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/resourced/configurator/role"
 	"github.com/resourced/configurator/stack"
 )
 
@@ -123,7 +123,11 @@ func (e *Engine) RunRubyLogic(name string) ([]byte, error) {
 func (e *Engine) ReadStack(name string) (stack.Stack, error) {
 	var stk stack.Stack
 
-	stackPath := path.Join(e.Root, "stacks", name+".toml")
+	if !strings.HasSuffix(name, ".toml") {
+		name = name + ".toml"
+	}
+
+	stackPath := path.Join(e.Root, "stacks", name)
 	if _, err := toml.DecodeFile(stackPath, &stk); err != nil {
 		return stk, err
 	}
@@ -137,18 +141,36 @@ func (e *Engine) RunStack(name string) ([]byte, error) {
 		return nil, err
 	}
 
+	allOutput := make([]byte, 0)
+
 	for _, step := range stk.Steps {
 		if strings.HasPrefix(step, "logic/") {
 			logicName := strings.Replace(step, "logic/", "", -1)
 
 			output, err := e.RunLogic(logicName)
-			log.Printf(string(output))
-
 			if err != nil {
 				return output, err
 			}
+
+			allOutput = append(allOutput, output...)
+			allOutput = append(allOutput, []byte("\n")...)
 		}
 	}
 
-	return nil, nil
+	return allOutput, nil
+}
+
+func (e *Engine) ReadRole(name string) (role.Role, error) {
+	var rl role.Role
+
+	if !strings.HasSuffix(name, ".toml") {
+		name = name + ".toml"
+	}
+
+	rolePath := path.Join(e.Root, "roles", name)
+	if _, err := toml.DecodeFile(rolePath, &rl); err != nil {
+		return rl, err
+	}
+
+	return rl, nil
 }
