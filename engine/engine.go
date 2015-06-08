@@ -63,7 +63,7 @@ func (e *Engine) InstallPythonLogicDependencies(name string) ([]byte, error) {
 	return exec.Command(e.PipPath, "install", "-r", reqPath).CombinedOutput()
 }
 
-func (e *Engine) RunLogic(name string) ([]byte, error) {
+func (e *Engine) RunPythonLogic(name string) ([]byte, error) {
 	execPath := path.Join(e.Root, "logic", name, "__init__.py")
 	if e.DryRun {
 		return []byte(e.PythonPath + " " + execPath), nil
@@ -82,4 +82,13 @@ func (e *Engine) InstallRubyLogicDependencies(name string) ([]byte, error) {
 	cmd.Path = logicPath
 
 	return cmd.CombinedOutput()
+}
+
+func (e *Engine) RunRubyLogic(name string) ([]byte, error) {
+	execPath := path.Join(e.Root, "logic", name, name+".rb")
+	if e.DryRun {
+		return []byte(e.RubyPath + " " + execPath), nil
+	}
+
+	return exec.Command(e.RubyPath, execPath).CombinedOutput()
 }

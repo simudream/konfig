@@ -1,3 +1,1 @@
-The base class of logic layer.
-
-There are two languages where base classes are implemented: Python and Ruby.
+The base classes of logic layer. They are implemented in 2 languages: Python and Ruby.
