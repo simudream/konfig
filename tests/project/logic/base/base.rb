@@ -28,7 +28,6 @@ class Base
         end
 
         Dir.entries(data_dir).each do |filename|
-            puts filename
             if filename.downcase.start_with?('readme') || filename == '.' || filename == '..'
                 next
             end
