@@ -79,7 +79,7 @@ func TestInstallRubyLogicDependencies(t *testing.T) {
 		t.Fatalf("Creating new engine should not fail. Error: %v", err)
 	}
 
-	output, err := engine.InstallRubyLogicDependencies("helloworld-py")
+	output, err := engine.InstallRubyLogicDependencies("helloworld-rb")
 	if err != nil {
 		t.Fatalf("InstallRubyLogicDependencies should not fail in dry run mode. Error: %v", err)
 	}
