@@ -1,10 +1,17 @@
 package engine
 
 import (
+	"errors"
+	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/exec"
 	"path"
+	"strings"
+
+	"github.com/BurntSushi/toml"
+	"github.com/resourced/configurator/stack"
 )
 
 func New(root string) (*Engine, error) {
@@ -54,6 +61,26 @@ func (e *Engine) ReadDir(dirname string) ([]os.FileInfo, error) {
 	return ioutil.ReadDir(path.Join(e.Root, dirname))
 }
 
+func (e *Engine) RunLogic(name string) ([]byte, error) {
+	pythonExecPath := path.Join(e.Root, "logic", name, "__init__.py")
+	_, pyErr := os.Stat(pythonExecPath)
+	if pyErr == nil {
+		return e.RunPythonLogic(name)
+	}
+
+	rubyExecPath := path.Join(e.Root, "logic", name, name+".rb")
+	_, rbErr := os.Stat(rubyExecPath)
+	if rbErr == nil {
+		return e.RunRubyLogic(name)
+	}
+
+	if os.IsNotExist(pyErr) || os.IsNotExist(rbErr) {
+		return nil, errors.New(fmt.Sprintf("Logic must be implemented in Python(%v/__init__.py) or Ruby(%v/%v.rb)", name, name, name))
+	}
+
+	return nil, nil
+}
+
 func (e *Engine) InstallPythonLogicDependencies(name string) ([]byte, error) {
 	reqPath := path.Join(e.Root, "logic", name, "requirements.txt")
 	if e.DryRun {
@@ -91,4 +118,37 @@ func (e *Engine) RunRubyLogic(name string) ([]byte, error) {
 	}
 
 	return exec.Command(e.RubyPath, execPath).CombinedOutput()
+}
+
+func (e *Engine) ReadStack(name string) (stack.Stack, error) {
+	var stk stack.Stack
+
+	stackPath := path.Join(e.Root, "stacks", name+".toml")
+	if _, err := toml.DecodeFile(stackPath, &stk); err != nil {
+		return stk, err
+	}
+
+	return stk, nil
+}
+
+func (e *Engine) RunStack(name string) ([]byte, error) {
+	stk, err := e.ReadStack(name)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, step := range stk.Steps {
+		if strings.HasPrefix(step, "logic/") {
+			logicName := strings.Replace(step, "logic/", "", -1)
+
+			output, err := e.RunLogic(logicName)
+			log.Printf(string(output))
+
+			if err != nil {
+				return output, err
+			}
+		}
+	}
+
+	return nil, nil
 }

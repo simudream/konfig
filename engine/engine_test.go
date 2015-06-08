@@ -7,7 +7,7 @@ import (
 )
 
 func TestConstructor(t *testing.T) {
-	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/blank"))
+	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/tests/project"))
 	if err != nil {
 		t.Fatalf("Creating new engine should not fail. Error: %v", err)
 	}
@@ -23,7 +23,7 @@ func TestConstructor(t *testing.T) {
 }
 
 func TestInstallPythonLogicDependencies(t *testing.T) {
-	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/blank"))
+	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/tests/project"))
 	if err != nil {
 		t.Fatalf("Creating new engine should not fail. Error: %v", err)
 	}
@@ -47,7 +47,7 @@ func TestInstallPythonLogicDependencies(t *testing.T) {
 }
 
 func TestRunPythonLogic(t *testing.T) {
-	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/blank"))
+	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/tests/project"))
 	if err != nil {
 		t.Fatalf("Creating new engine should not fail. Error: %v", err)
 	}
@@ -74,7 +74,7 @@ func TestRunPythonLogic(t *testing.T) {
 }
 
 func TestInstallRubyLogicDependencies(t *testing.T) {
-	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/blank"))
+	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/tests/project"))
 	if err != nil {
 		t.Fatalf("Creating new engine should not fail. Error: %v", err)
 	}
@@ -89,7 +89,7 @@ func TestInstallRubyLogicDependencies(t *testing.T) {
 }
 
 func TestRunRubyLogic(t *testing.T) {
-	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/blank"))
+	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/tests/project"))
 	if err != nil {
 		t.Fatalf("Creating new engine should not fail. Error: %v", err)
 	}
@@ -103,5 +103,32 @@ func TestRunRubyLogic(t *testing.T) {
 	}
 	if !strings.HasSuffix(string(output), "helloworld-rb.rb") {
 		t.Fatalf("RunRubyLogic should contain helloworld-rb.rb in dry run mode. Output: %v", string(output))
+	}
+}
+
+func TestReadStack(t *testing.T) {
+	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/tests/project"))
+	if err != nil {
+		t.Fatalf("Creating new engine should not fail. Error: %v", err)
+	}
+
+	stk, err := engine.ReadStack("helloworld")
+	if err != nil {
+		t.Fatalf("ReadStack should not fail. Error: %v", err)
+	}
+	if len(stk.Steps) != 2 {
+		t.Fatalf("stack steps should == 2. Length: %v", len(stk.Steps))
+	}
+}
+
+func TestRunStack(t *testing.T) {
+	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/tests/project"))
+	if err != nil {
+		t.Fatalf("Creating new engine should not fail. Error: %v", err)
+	}
+
+	_, err = engine.RunStack("helloworld")
+	if err != nil {
+		t.Fatalf("RunStack should not fail. Error: %v", err)
 	}
 }
