@@ -6,6 +6,8 @@
 
 ## TODO
 
+* Flesh out all commands under main.go
+
 * Flesh out the users logic & add tests.
 
 * Change ResourceD slogan to: Toolkit of a Happy DevOps
