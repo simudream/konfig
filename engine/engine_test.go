@@ -22,6 +22,13 @@ func TestConstructor(t *testing.T) {
 	}
 }
 
+func TestIsGitRepo(t *testing.T) {
+	engine := &Engine{Root: os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator")}
+	if !engine.IsGitRepo() {
+		t.Fatalf(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator should be a git repo."))
+	}
+}
+
 func TestInstallPythonLogicDependencies(t *testing.T) {
 	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/tests/project"))
 	if err != nil {

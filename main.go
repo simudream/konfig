@@ -5,11 +5,7 @@ import (
 	"bytes"
 	"errors"
 	"flag"
-	"io/ioutil"
 	"os"
-	"os/exec"
-	"path"
-	"strings"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/resourced/configurator/engine"
@@ -34,14 +30,14 @@ func main() {
 		logrus.Fatal(err)
 	}
 
+	engine, err := engine.New(*rootInput)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+
+	engine.DryRun = *dryRunInput
+
 	if *cmdInput == "run" {
-		engine, err := engine.New(*rootInput)
-		if err != nil {
-			logrus.Fatal(err)
-		}
-
-		engine.DryRun = *dryRunInput
-
 		if *pythonInput != "" {
 			engine.PythonPath = *pythonInput
 		}
@@ -72,38 +68,9 @@ func main() {
 	}
 
 	if *cmdInput == "new" {
-		// 1. Create tmp directory.
-		dir, err := ioutil.TempDir(os.TempDir(), "configurator")
+		err := engine.NewProject()
 		if err != nil {
-			logrus.WithFields(logrus.Fields{
-				"error": err.Error(),
-			}).Fatal(err)
-		}
-		defer os.RemoveAll(dir)
-
-		// 2. git clone to /tmp directory.
-		output, err := exec.Command("git", "clone", "https://github.com/resourced/configurator.git", dir).CombinedOutput()
-		if err != nil {
-			os.RemoveAll(dir)
-
-			logrus.WithFields(logrus.Fields{
-				"error": err.Error(),
-			}).Fatal(string(output))
-		}
-
-		logrus.Info(string(output))
-
-		// 3. mv blank template folder to *rootInput
-		logrus.Infof("Moving %v to %v...", path.Join(dir, "blank"), *rootInput)
-		err = os.Rename(path.Join(dir, "blank"), *rootInput)
-		if err != nil {
-			os.RemoveAll(dir)
-
-			if !strings.Contains(err.Error(), "directory not empty") {
-				logrus.WithFields(logrus.Fields{
-					"error": err.Error(),
-				}).Fatal(string(output))
-			}
+			logrus.Fatal(err)
 		}
 	}
 }

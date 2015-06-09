@@ -21,6 +21,11 @@ import (
 func New(root string) (*Engine, error) {
 	engine := &Engine{Root: root}
 
+	err := os.MkdirAll(root, 0755)
+	if err != nil {
+		return nil, err
+	}
+
 	logicDirs, err := engine.readDir("logic")
 	if err != nil {
 		return nil, err
@@ -56,7 +61,6 @@ func New(root string) (*Engine, error) {
 }
 
 type Engine struct {
-	// Root is the root of project directory.
 	Root string
 
 	// PythonPath is the path to python executable.
@@ -71,18 +75,63 @@ type Engine struct {
 	// BundlePath is the path to bundle executable.
 	BundlePath string
 
-	// DryRun is the dry run flag, default is true.
 	DryRun bool
 
-	// Hostname is the host's name.
 	Hostname string
 
-	// EC2Tags is the host's EC2 tags.
 	EC2Tags []map[string]string
+
+	GitBranch string
 
 	Logic  []os.FileInfo
 	Stacks []os.FileInfo
 	Roles  []os.FileInfo
+}
+
+// IsGitRepo checks if Root is a git repo.
+func (e *Engine) IsGitRepo() bool {
+	_, err := os.Stat(path.Join(e.Root, ".git"))
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func (e *Engine) NewProject() error {
+	// 1. Create tmp directory.
+	dir, err := ioutil.TempDir(os.TempDir(), "configurator")
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"error": err.Error(),
+		}).Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+
+	// 2. git clone to /tmp directory.
+	output, err := exec.Command("git", "clone", "https://github.com/resourced/configurator.git", dir).CombinedOutput()
+	if err != nil {
+		os.RemoveAll(dir)
+
+		logrus.WithFields(logrus.Fields{
+			"error": err.Error(),
+		}).Fatal(string(output))
+	}
+
+	logrus.Info(string(output))
+
+	// 3. mv blank template folder to Root
+	logrus.Infof("Moving %v to %v...", path.Join(dir, "blank"), e.Root)
+	err = os.Rename(path.Join(dir, "blank"), e.Root)
+	if err != nil {
+		os.RemoveAll(dir)
+
+		if !strings.Contains(err.Error(), "directory not empty") {
+			logrus.WithFields(logrus.Fields{
+				"error": err.Error(),
+			}).Fatal(string(output))
+		}
+	}
+	return nil
 }
 
 func (e *Engine) readDir(dirname string) ([]os.FileInfo, error) {
