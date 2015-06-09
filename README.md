@@ -5,7 +5,7 @@
 
 ## Comparison to existing solutions:
 
-* We are very serious about simple workflow. Logic->Stack->Role, that's all you have to understand.
+* We are very serious about simple workflow. Logic->Stack->Role, that's all.
 
     * **Logic:** This is where you implement the management process. You can use Ruby or Python.
 
