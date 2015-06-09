@@ -134,12 +134,7 @@ func (e *Engine) InstallPythonLogicDependencies(name string) ([]byte, error) {
 
 	_, err := os.Stat(reqPath)
 	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"dryrun": e.DryRun,
-			"error":  err.Error(),
-		}).Errorf("Unable to install Python dependencies for logic: %v", name)
-
-		return nil, err
+		return make([]byte, 0), nil
 	}
 
 	return exec.Command(e.PipPath, "install", "-r", reqPath).CombinedOutput()
@@ -177,12 +172,7 @@ func (e *Engine) InstallRubyLogicDependencies(name string) ([]byte, error) {
 
 	_, err := os.Stat(logicPath)
 	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"dryrun": e.DryRun,
-			"error":  err.Error(),
-		}).Errorf("Unable to install Ruby dependencies for logic: %v", name)
-
-		return nil, err
+		return make([]byte, 0), nil
 	}
 
 	cmd := exec.Command(e.BundlePath)
