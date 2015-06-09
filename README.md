@@ -51,6 +51,15 @@ INFO[0000] ruby tests/project/logic/helloworld-rb/helloworld-rb.rb            dr
 ```
 
 
+## Prerequisites
+
+* Git
+
+* Python and Pip, or
+
+* Ruby and Bundler.
+
+
 ## SSH mode installation
 
 Download the binary release [here](https://github.com/resourced/configurator/releases) and starts using it.
