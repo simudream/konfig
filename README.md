@@ -31,6 +31,15 @@
 Download the binary release [here](https://github.com/resourced/configurator/releases) and starts using it.
 ```
 configurator -h
+
+# Creating a new project
+configurator -root=/path/to/project -cmd=new
+
+# Cleaning dirty local changes on remote host
+configurator -root=/path/to/project -cmd=clean
+
+# Running on remote host
+configurator -root=/path/to/project
 ```
 
 ## Agent mode installation
