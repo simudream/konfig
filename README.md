@@ -3,37 +3,37 @@
 
 **ResourceD Configurator:** The simplest configuration management in the world.
 
-## Strengths compared to existing solutions:
+## Comparison to existing solutions:
 
-* It simplify your workflow by a lot. All the scripting logic is done in Python or Ruby.
+* We are very serious about simple workflow. Logic->Stack->Role, that's all you have to understand.
 
-* We are very serious about simple workflow. Logic -> Stack -> Role, that's all you have to understand.
+    * **Logic:** This is where you implement the management process. You can use Ruby or Python.
 
-    * **Logic:** This is where you implement the installation process. You can use Ruby or Python.
+    * **Stack:** This is how you can create a mixins of logic or other stacks.
 
-    * **Stacks:** This is where you create a mixins of logic or other stacks.
+    * **Role:** This is how a particular host is matched to stacks. Think of `site.pp`
 
-    * **Role:** This is how configurator understand how to apply stacks to a particular host.
+* IT DOES NOT USE DSL.
 
 * It uses git to store and version metadata.
 
-* Similar to existing solutions out there, it has two mode: Agent and SSH. But here's the difference:
+* It has two mode: Agent and SSH, just like others out there, but here's the difference:
 
     * When in Agent mode, there's only one binary to download and install.
 
-    * When in SSH mode, there's only one binary to download and install as well.
+    * When in SSH mode, there's only one binary to download and install.
 
 * It understands EC2 tags and use them for role matching.
 
 
-## SSH mode Installation
+## SSH mode installation
 
 Download the binary release [here](https://github.com/resourced/configurator/releases) and starts using it.
 ```
 configurator -h
 ```
 
-## Agent mode Installation
+## Agent mode installation
 
 1. Download ResourceD binary release [here](https://github.com/resourced/resourced/releases).
 
