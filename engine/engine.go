@@ -77,6 +77,9 @@ type Engine struct {
 	// Hostname is the host's name.
 	Hostname string
 
+	// EC2Tags is the host's EC2 tags.
+	EC2Tags []map[string]string
+
 	Logic  []os.FileInfo
 	Stacks []os.FileInfo
 	Roles  []os.FileInfo
@@ -343,9 +346,20 @@ func (e *Engine) checkIfRoleMatchedByHostname(rl role.Role) bool {
 	return false
 }
 
+// checkIfRoleMatchedByTags loops through matchers.Tags and return true only if everything matches EC2Tags.
+// The format of matchers.Tag is: key:value
 func (e *Engine) checkIfRoleMatchedByTags(rl role.Role) bool {
-	// TODO(didip): Fetch tags data first.
-	return false
+	for _, matcherTag := range rl.Matchers.Tags {
+		for _, ec2Tag := range e.EC2Tags {
+			for key, value := range ec2Tag {
+				if matcherTag != fmt.Sprintf("%v:%v", key, value) {
+					return false
+				}
+			}
+		}
+	}
+
+	return true
 }
 
 // RunRole allows engine to run a particular role.

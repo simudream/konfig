@@ -8,10 +8,6 @@
 
 * Able to download blank project from remote URL.
 
-* Log output immediately.
-
-* base classes are able to fetch tags from EC2 instance tags api.
-
 * Flesh out the users logic & add tests.
 
 * Change ResourceD slogan to: Toolkit of a Happy DevOps
