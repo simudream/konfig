@@ -305,6 +305,7 @@ func (e *Engine) RunRoles() ([]byte, error) {
 	allOutput := make([]byte, 0)
 
 	for _, roleFile := range e.Roles {
+		// roleFile must always be a file.
 		if roleFile.IsDir() {
 			continue
 		}
