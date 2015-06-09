@@ -129,8 +129,8 @@ func TestReadRole(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadRole should not fail. Error: %v", err)
 	}
-	if len(rl.Steps) != 2 {
-		t.Fatalf("role steps should == 2. Length: %v", len(rl.Steps))
+	if len(rl.Steps) != 1 {
+		t.Fatalf("role steps should == 1. Length: %v", len(rl.Steps))
 	}
 	if rl.Steps[0] != "stacks/helloworld.toml" {
 		t.Fatalf("role steps[0] should == stacks/helloworld.toml. Step: %v", rl.Steps[0])

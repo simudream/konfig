@@ -1,6 +1,5 @@
 steps = [
-    "stacks/helloworld.toml",
-    "stacks/helloworld.toml",
+    "stacks/helloworld.toml"
 ]
 
 [matchers]
