@@ -4,8 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"flag"
-	"log"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/kardianos/osext"
 	"github.com/resourced/configurator/engine"
 )
@@ -26,7 +26,7 @@ func main() {
 	if *rootInput == "" {
 		root, err = osext.ExecutableFolder()
 		if err != nil {
-			log.Fatal(err)
+			logrus.Fatal(err)
 		}
 
 	} else {
@@ -35,7 +35,7 @@ func main() {
 
 	engine, err := engine.New(root)
 	if err != nil {
-		log.Fatal(err)
+		logrus.Fatal(err)
 	}
 
 	engine.DryRun = *dryRunInput
@@ -55,16 +55,16 @@ func main() {
 
 	output, err := engine.RunRoles()
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	scanner := bufio.NewScanner(bytes.NewReader(output))
-	for scanner.Scan() {
-		if scanner.Text() != "" {
-			log.Print(scanner.Text())
+		scanner := bufio.NewScanner(bytes.NewReader(output))
+		for scanner.Scan() {
+			if scanner.Text() != "" {
+				logrus.Error(scanner.Text())
+			}
 		}
-	}
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
+		if err := scanner.Err(); err != nil {
+			logrus.Fatal(err)
+		}
+
+		logrus.Fatal(err)
 	}
 }

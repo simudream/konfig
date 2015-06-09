@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+	"github.com/Sirupsen/logrus"
 	"github.com/resourced/configurator/role"
 	"github.com/resourced/configurator/stack"
 )
@@ -87,6 +88,10 @@ func (e *Engine) readDir(dirname string) ([]os.FileInfo, error) {
 
 // RunLogic allows engine to execute one logic layer.
 func (e *Engine) RunLogic(name string) ([]byte, error) {
+	logrus.WithFields(logrus.Fields{
+		"dryrun": e.DryRun,
+	}).Infof("Running logic: %v", name)
+
 	pythonExecPath := path.Join(e.Root, "logic", name, "__init__.py")
 	_, pyErr := os.Stat(pythonExecPath)
 	if pyErr == nil {
@@ -100,7 +105,14 @@ func (e *Engine) RunLogic(name string) ([]byte, error) {
 	}
 
 	if os.IsNotExist(pyErr) || os.IsNotExist(rbErr) {
-		return nil, errors.New(fmt.Sprintf("Logic must be implemented in Python(%v/__init__.py) or Ruby(%v/%v.rb)", name, name, name))
+		err := errors.New(fmt.Sprintf("Logic must be implemented in Python(%v/__init__.py) or Ruby(%v/%v.rb)", name, name, name))
+
+		logrus.WithFields(logrus.Fields{
+			"dryrun": e.DryRun,
+			"error":  err.Error(),
+		}).Errorf("Unable to run logic: %v", name)
+
+		return nil, err
 	}
 
 	return nil, nil
@@ -110,7 +122,21 @@ func (e *Engine) RunLogic(name string) ([]byte, error) {
 func (e *Engine) InstallPythonLogicDependencies(name string) ([]byte, error) {
 	reqPath := path.Join(e.Root, "logic", name, "requirements.txt")
 	if e.DryRun {
-		return []byte(e.PipPath + " install -r " + reqPath), nil
+		logrus.WithFields(logrus.Fields{
+			"dryrun": e.DryRun,
+		}).Infof("%v install -r %v", e.PipPath, reqPath)
+
+		return nil, nil
+	}
+
+	_, err := os.Stat(reqPath)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"dryrun": e.DryRun,
+			"error":  err.Error(),
+		}).Errorf("Unable to install Python dependencies for logic: %v", name)
+
+		return nil, err
 	}
 
 	return exec.Command(e.PipPath, "install", "-r", reqPath).CombinedOutput()
@@ -118,9 +144,18 @@ func (e *Engine) InstallPythonLogicDependencies(name string) ([]byte, error) {
 
 // RunPythonLogic allows engine to run a logic written in python.
 func (e *Engine) RunPythonLogic(name string) ([]byte, error) {
+	_, err := e.InstallPythonLogicDependencies(name)
+	if err != nil {
+		return nil, err
+	}
+
 	execPath := path.Join(e.Root, "logic", name, "__init__.py")
 	if e.DryRun {
-		return []byte(e.PythonPath + " " + execPath), nil
+		logrus.WithFields(logrus.Fields{
+			"dryrun": e.DryRun,
+		}).Infof("%v %v", e.PythonPath, execPath)
+
+		return nil, nil
 	}
 
 	return exec.Command(e.PythonPath, execPath).CombinedOutput()
@@ -130,7 +165,21 @@ func (e *Engine) RunPythonLogic(name string) ([]byte, error) {
 func (e *Engine) InstallRubyLogicDependencies(name string) ([]byte, error) {
 	logicPath := path.Join(e.Root, "logic", name)
 	if e.DryRun {
-		return []byte("cd " + logicPath + "; " + e.BundlePath), nil
+		logrus.WithFields(logrus.Fields{
+			"dryrun": e.DryRun,
+		}).Infof("cd %v && %v", logicPath, e.BundlePath)
+
+		return nil, nil
+	}
+
+	_, err := os.Stat(logicPath)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"dryrun": e.DryRun,
+			"error":  err.Error(),
+		}).Errorf("Unable to install Ruby dependencies for logic: %v", name)
+
+		return nil, err
 	}
 
 	cmd := exec.Command(e.BundlePath)
@@ -141,9 +190,18 @@ func (e *Engine) InstallRubyLogicDependencies(name string) ([]byte, error) {
 
 // RunRubyLogic allows engine to run a logic written in ruby.
 func (e *Engine) RunRubyLogic(name string) ([]byte, error) {
+	_, err := e.InstallRubyLogicDependencies(name)
+	if err != nil {
+		return nil, err
+	}
+
 	execPath := path.Join(e.Root, "logic", name, name+".rb")
 	if e.DryRun {
-		return []byte(e.RubyPath + " " + execPath), nil
+		logrus.WithFields(logrus.Fields{
+			"dryrun": e.DryRun,
+		}).Infof("%v %v", e.RubyPath, execPath)
+
+		return nil, nil
 	}
 
 	return exec.Command(e.RubyPath, execPath).CombinedOutput()
@@ -159,6 +217,11 @@ func (e *Engine) ReadStack(name string) (stack.Stack, error) {
 
 	stackPath := path.Join(e.Root, "stacks", name)
 	if _, err := toml.DecodeFile(stackPath, &stk); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"dryrun": e.DryRun,
+			"error":  err.Error(),
+		}).Errorf("Unable to decode %v", stackPath)
+
 		return stk, err
 	}
 
@@ -172,7 +235,9 @@ func (e *Engine) RunStack(name string) ([]byte, error) {
 		return nil, err
 	}
 
-	allOutput := make([]byte, 0)
+	logrus.WithFields(logrus.Fields{
+		"dryrun": e.DryRun,
+	}).Infof("Running stack: %v", name)
 
 	for _, step := range stk.Steps {
 		if strings.HasPrefix(step, "logic/") {
@@ -180,15 +245,17 @@ func (e *Engine) RunStack(name string) ([]byte, error) {
 
 			output, err := e.RunLogic(logicName)
 			if err != nil {
+				logrus.WithFields(logrus.Fields{
+					"dryrun": e.DryRun,
+					"error":  err.Error(),
+				}).Errorf("Unable to run logic: %v", logicName)
+
 				return output, err
 			}
-
-			allOutput = append(allOutput, output...)
-			allOutput = append(allOutput, []byte("\n")...)
 		}
 	}
 
-	return allOutput, nil
+	return make([]byte, 0), nil
 }
 
 // ReadRole allows engine to read a particular role defined in TOML file.
@@ -201,8 +268,15 @@ func (e *Engine) ReadRole(name string) (role.Role, error) {
 
 	rolePath := path.Join(e.Root, "roles", name)
 	if _, err := toml.DecodeFile(rolePath, &rl); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"dryrun": e.DryRun,
+			"error":  err.Error(),
+		}).Errorf("Unable to decode %v", rolePath)
+
 		return rl, err
 	}
+
+	rl.Name = name
 
 	return rl, nil
 }
@@ -224,8 +298,21 @@ func (e *Engine) checkIfRoleMatched(rl role.Role) bool {
 	}
 
 	if hostnameMatcherIsProvided {
+		logrus.WithFields(logrus.Fields{
+			"dryrun":   e.DryRun,
+			"hostname": e.Hostname,
+			"matcher:": rl.Matchers.Hostname,
+		}).Infof("Role %v matched.", rl.Name)
+
 		return e.checkIfRoleMatchedByHostname(rl)
+
 	} else if tagsMatcherIsProvided {
+		logrus.WithFields(logrus.Fields{
+			"dryrun":   e.DryRun,
+			"hostname": e.Hostname,
+			"matcher":  rl.Matchers.Tags,
+		}).Infof("Role %v matched.", rl.Name)
+
 		return e.checkIfRoleMatchedByTags(rl)
 	}
 
@@ -268,20 +355,24 @@ func (e *Engine) RunRole(name string) ([]byte, error) {
 		return nil, err
 	}
 
-	allOutput := make([]byte, 0)
-
 	if e.checkIfRoleMatched(rl) {
+		logrus.WithFields(logrus.Fields{
+			"dryrun": e.DryRun,
+		}).Infof("Running role: %v", name)
+
 		for _, step := range rl.Steps {
 			if strings.HasPrefix(step, "stacks/") {
 				stackName := strings.Replace(step, "stacks/", "", -1)
 
 				output, err := e.RunStack(stackName)
 				if err != nil {
+					logrus.WithFields(logrus.Fields{
+						"dryrun": e.DryRun,
+						"error":  err.Error(),
+					}).Errorf("Unable to run stack: %v", stackName)
+
 					return output, err
 				}
-
-				allOutput = append(allOutput, output...)
-				allOutput = append(allOutput, []byte("\n")...)
 			}
 
 			if strings.HasPrefix(step, "logic/") {
@@ -289,25 +380,28 @@ func (e *Engine) RunRole(name string) ([]byte, error) {
 
 				output, err := e.RunLogic(logicName)
 				if err != nil {
+					logrus.WithFields(logrus.Fields{
+						"dryrun": e.DryRun,
+						"error":  err.Error(),
+					}).Errorf("Unable to run logic: %v", logicName)
+
 					return output, err
 				}
-
-				allOutput = append(allOutput, output...)
-				allOutput = append(allOutput, []byte("\n")...)
 			}
 		}
 	}
 
-	return allOutput, nil
+	return make([]byte, 0), nil
 }
 
-// RunRoles loop through all roles and apply only the one that matched host.
+// RunRoles loop through all roles and apply the first one that matched host.
 func (e *Engine) RunRoles() ([]byte, error) {
-	allOutput := make([]byte, 0)
-
 	for _, roleFile := range e.Roles {
-		// roleFile must always be a file.
 		if roleFile.IsDir() {
+			logrus.WithFields(logrus.Fields{
+				"dryrun": e.DryRun,
+			}).Warningf("roleFile: %v must always be a file.", roleFile.Name())
+
 			continue
 		}
 
@@ -316,9 +410,8 @@ func (e *Engine) RunRoles() ([]byte, error) {
 			return output, err
 		}
 
-		allOutput = append(allOutput, output...)
-		allOutput = append(allOutput, []byte("\n")...)
+		return output, nil
 	}
 
-	return allOutput, nil
+	return make([]byte, 0), nil
 }

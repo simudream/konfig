@@ -11,4 +11,6 @@ type Role struct {
 		Hostname []string `toml:"hostname"`
 		Tags     []string `toml:"tags"`
 	}
+
+	Name string
 }
