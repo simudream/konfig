@@ -34,6 +34,11 @@ func New(root string) (*Engine, error) {
 		return nil, err
 	}
 
+	hostname, err := os.Hostname()
+	if err != nil {
+		return nil, err
+	}
+
 	engine.Logic = logicDirs
 	engine.Stacks = stackFiles
 	engine.Roles = roleFiles
@@ -43,6 +48,7 @@ func New(root string) (*Engine, error) {
 	engine.PipPath = "/usr/local/bin/pip"
 	engine.RubyPath = "/usr/bin/ruby"
 	engine.BundlePath = "bundle"
+	engine.Hostname = hostname
 
 	return engine, nil
 }
@@ -65,6 +71,9 @@ type Engine struct {
 
 	// DryRun is the dry run flag, default is true.
 	DryRun bool
+
+	// Hostname is the host's name.
+	Hostname string
 
 	Logic  []os.FileInfo
 	Stacks []os.FileInfo
@@ -197,6 +206,54 @@ func (e *Engine) ReadRole(name string) (role.Role, error) {
 	return rl, nil
 }
 
+func (e *Engine) checkIfRoleMatched(rl role.Role) bool {
+	hostnameMatcherIsProvided := true
+	if rl.Matchers.Hostname == nil || len(rl.Matchers.Hostname) < 2 {
+		hostnameMatcherIsProvided = false
+	}
+
+	tagsMatcherIsProvided := true
+	if rl.Matchers.Tags == nil || len(rl.Matchers.Tags) < 1 {
+		tagsMatcherIsProvided = false
+	}
+
+	// There are no matchers provided.
+	if !hostnameMatcherIsProvided && !tagsMatcherIsProvided {
+		return false
+	}
+
+	if hostnameMatcherIsProvided {
+		return e.checkIfRoleMatchedByHostname(rl)
+	} else if tagsMatcherIsProvided {
+		return e.checkIfRoleMatchedByTags(rl)
+	}
+
+	return false
+}
+
+func (e *Engine) checkIfRoleMatchedByHostname(rl role.Role) bool {
+	hostnameMatcherOperator := rl.Matchers.Hostname[0]
+	hostnameMatcherValue := rl.Matchers.Hostname[1]
+
+	// If value == "$HOSTNAME", substitute it to e.Hostname
+	if hostnameMatcherValue == "$HOSTNAME" {
+		hostnameMatcherValue = e.Hostname
+	}
+
+	hostnameMatcherValueWithEnv := os.ExpandEnv(hostnameMatcherValue)
+
+	if hostnameMatcherOperator == "=" {
+		return e.Hostname == hostnameMatcherValueWithEnv
+	}
+
+	return false
+}
+
+func (e *Engine) checkIfRoleMatchedByTags(rl role.Role) bool {
+	// TODO(didip): Fetch tags data first.
+	return false
+}
+
 // RunRole allows engine to run a particular role.
 func (e *Engine) RunRole(name string) ([]byte, error) {
 	rl, err := e.ReadRole(name)
@@ -206,30 +263,52 @@ func (e *Engine) RunRole(name string) ([]byte, error) {
 
 	allOutput := make([]byte, 0)
 
-	for _, step := range rl.Steps {
-		if strings.HasPrefix(step, "stacks/") {
-			stackName := strings.Replace(step, "stacks/", "", -1)
+	if e.checkIfRoleMatched(rl) {
+		for _, step := range rl.Steps {
+			if strings.HasPrefix(step, "stacks/") {
+				stackName := strings.Replace(step, "stacks/", "", -1)
 
-			output, err := e.RunStack(stackName)
-			if err != nil {
-				return output, err
+				output, err := e.RunStack(stackName)
+				if err != nil {
+					return output, err
+				}
+
+				allOutput = append(allOutput, output...)
+				allOutput = append(allOutput, []byte("\n")...)
 			}
 
-			allOutput = append(allOutput, output...)
-			allOutput = append(allOutput, []byte("\n")...)
-		}
+			if strings.HasPrefix(step, "logic/") {
+				logicName := strings.Replace(step, "logic/", "", -1)
 
-		if strings.HasPrefix(step, "logic/") {
-			logicName := strings.Replace(step, "logic/", "", -1)
+				output, err := e.RunLogic(logicName)
+				if err != nil {
+					return output, err
+				}
 
-			output, err := e.RunLogic(logicName)
-			if err != nil {
-				return output, err
+				allOutput = append(allOutput, output...)
+				allOutput = append(allOutput, []byte("\n")...)
 			}
-
-			allOutput = append(allOutput, output...)
-			allOutput = append(allOutput, []byte("\n")...)
 		}
+	}
+
+	return allOutput, nil
+}
+
+func (e *Engine) RunRoles() ([]byte, error) {
+	allOutput := make([]byte, 0)
+
+	for _, roleFile := range e.Roles {
+		if roleFile.IsDir() {
+			continue
+		}
+
+		output, err := e.RunRole(roleFile.Name())
+		if err != nil {
+			return output, err
+		}
+
+		allOutput = append(allOutput, output...)
+		allOutput = append(allOutput, []byte("\n")...)
 	}
 
 	return allOutput, nil

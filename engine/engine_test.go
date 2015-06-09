@@ -175,3 +175,20 @@ func TestRunRole(t *testing.T) {
 		t.Fatalf("RunRole should not fail. Error: %v", err)
 	}
 }
+
+func TestCheckIfRoleMatchedByHostname(t *testing.T) {
+	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/tests/project"))
+	if err != nil {
+		t.Fatalf("Creating new engine should not fail. Error: %v", err)
+	}
+
+	rl, err := engine.ReadRole("helloworld-staging.toml")
+	if err != nil {
+		t.Fatalf("ReadRole should not fail. Error: %v", err)
+	}
+
+	isMatched := engine.checkIfRoleMatchedByHostname(rl)
+	if isMatched != true {
+		t.Fatalf(`["=", "$HOSTNAME"] should always match any hostname. IsMatched: %v`, isMatched)
+	}
+}
