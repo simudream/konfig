@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bufio"
+	"bytes"
 	"flag"
 	"log"
 
@@ -17,6 +19,7 @@ func main() {
 	pipInput := flag.String("pip", "", "Path to pip executable")
 	rubyInput := flag.String("ruby", "", "Path to ruby executable")
 	bundleInput := flag.String("bundle", "", "Path to bundle executable")
+	dryRunInput := flag.Bool("dryrun", true, "Dry run mode, default to true")
 
 	flag.Parse()
 
@@ -35,6 +38,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	engine.DryRun = *dryRunInput
+
 	if *pythonInput != "" {
 		engine.PythonPath = *pythonInput
 	}
@@ -48,7 +53,18 @@ func main() {
 		engine.BundlePath = *bundleInput
 	}
 
-	for _, f := range engine.Logic {
-		println(f.Name())
+	output, err := engine.RunRoles()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	scanner := bufio.NewScanner(bytes.NewReader(output))
+	for scanner.Scan() {
+		if scanner.Text() != "" {
+			log.Print(scanner.Text())
+		}
+	}
+	if err := scanner.Err(); err != nil {
+		log.Fatal(err)
 	}
 }

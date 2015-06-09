@@ -8,7 +8,7 @@
 
 * Able to download blank project from remote URL.
 
-* Able to loop through all roles and execute the one that matches.
+* Log output immediately.
 
 * base classes are able to fetch tags from EC2 instance tags api.
 
