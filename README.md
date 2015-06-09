@@ -6,8 +6,6 @@
 
 ## TODO
 
-* Able to download blank project from remote URL.
-
 * Flesh out the users logic & add tests.
 
 * Change ResourceD slogan to: Toolkit of a Happy DevOps
