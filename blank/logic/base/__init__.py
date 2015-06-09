@@ -8,11 +8,13 @@ import os
 import os.path
 import sys
 import json
+import socket
 
 
 class Base(object):
     def __init__(self):
         self.dry_run = True
+        self.hostname = socket.gethostname()
         self.data = {}
         self._read_data()
 

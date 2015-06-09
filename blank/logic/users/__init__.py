@@ -27,6 +27,9 @@ class User(base.Base):
 
     def run(self):
         for _, data in self.data.items():
+            if 'shell' not in data:
+                data['shell'] = '/bin/bash'
+
             try:
                 pwd.getpwnam(data['name'])
 

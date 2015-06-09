@@ -6,7 +6,7 @@ Put all users metadata here.
     "uid": 1,
     "groups": [200, "developers", "designers"],
     "pub_key": "",
-    shell: "/bin/bash"
+    "shell": "/bin/bash"
 }
 
 * name: The name of user.
@@ -16,3 +16,5 @@ Put all users metadata here.
 * groups: The groups user belong to. The first one is primary, everything else is secondary.
 
 * pub_key: The public key of that user.
+
+* shell: The shell of that user. Default is `/bin/bash`.
