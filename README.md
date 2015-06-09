@@ -3,6 +3,7 @@
 
 **ResourceD Configurator:** The simplest configuration management in the world.
 
+
 ## Comparison to existing solutions:
 
 * We are very serious about simple workflow. Logic->Stack->Role, that's all.
@@ -13,7 +14,9 @@
 
     * **Role:** This is how a particular host is matched to stacks. Think of `site.pp`
 
-* IT DOES NOT USE DSL.
+* **IT DOES NOT USE DSL.**
+
+* Dry run switch is `true` by default.
 
 * It uses git to store and version metadata.
 
@@ -24,6 +27,28 @@
     * When in SSH mode, there's only one binary to download and install.
 
 * It understands EC2 tags and use them for role matching.
+
+
+## Example when running locally
+```
+configurator -root=./tests/project -cmd=run
+INFO[0000] Role helloworld-staging.toml matched.    dryrun=true hostname=didip-mac-mini.local matcher:=[= $HOSTNAME]
+INFO[0000] Running role: helloworld-staging.toml    dryrun=true
+INFO[0000] Running stack: helloworld.toml           dryrun=true
+INFO[0000] Running logic: helloworld-py             dryrun=true
+INFO[0000] pip install -r tests/project/logic/helloworld-py/requirements.txt  dryrun=true
+INFO[0000] python tests/project/logic/helloworld-py/__init__.py  dryrun=true
+INFO[0000] Running logic: helloworld-rb             dryrun=true
+INFO[0000] cd tests/project/logic/helloworld-rb && bundle  dryrun=true
+INFO[0000] ruby tests/project/logic/helloworld-rb/helloworld-rb.rb  dryrun=true
+INFO[0000] Running stack: helloworld.toml           dryrun=true
+INFO[0000] Running logic: helloworld-py             dryrun=true
+INFO[0000] pip install -r tests/project/logic/helloworld-py/requirements.txt  dryrun=true
+INFO[0000] python tests/project/logic/helloworld-py/__init__.py  dryrun=true
+INFO[0000] Running logic: helloworld-rb             dryrun=true
+INFO[0000] cd tests/project/logic/helloworld-rb && bundle  dryrun=true
+INFO[0000] ruby tests/project/logic/helloworld-rb/helloworld-rb.rb  dryrun=true
+```
 
 
 ## SSH mode installation
@@ -41,6 +66,7 @@ configurator -root=/path/to/project -cmd=clean
 # Running on remote host
 configurator -root=/path/to/project
 ```
+
 
 ## Agent mode installation
 
