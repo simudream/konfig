@@ -32,22 +32,22 @@
 ## Example when running locally
 ```
 configurator -root=./tests/project -cmd=run
-INFO[0000] Role helloworld-staging.toml matched.    dryrun=true hostname=didip-mac-mini.local matcher:=[= $HOSTNAME]
-INFO[0000] Running role: helloworld-staging.toml    dryrun=true
-INFO[0000] Running stack: helloworld.toml           dryrun=true
-INFO[0000] Running logic: helloworld-py             dryrun=true
+INFO[0000] Role helloworld-staging.toml matched.                              dryrun=true hostname=didip-mac-mini.local matcher:=[= $HOSTNAME]
+INFO[0000] Running role: helloworld-staging.toml                              dryrun=true
+INFO[0000] Running stack: helloworld.toml                                     dryrun=true
+INFO[0000] Running logic: helloworld-py                                       dryrun=true
 INFO[0000] pip install -r tests/project/logic/helloworld-py/requirements.txt  dryrun=true
-INFO[0000] python tests/project/logic/helloworld-py/__init__.py  dryrun=true
-INFO[0000] Running logic: helloworld-rb             dryrun=true
-INFO[0000] cd tests/project/logic/helloworld-rb && bundle  dryrun=true
-INFO[0000] ruby tests/project/logic/helloworld-rb/helloworld-rb.rb  dryrun=true
-INFO[0000] Running stack: helloworld.toml           dryrun=true
-INFO[0000] Running logic: helloworld-py             dryrun=true
+INFO[0000] python tests/project/logic/helloworld-py/__init__.py               dryrun=true
+INFO[0000] Running logic: helloworld-rb                                       dryrun=true
+INFO[0000] cd tests/project/logic/helloworld-rb && bundle                     dryrun=true
+INFO[0000] ruby tests/project/logic/helloworld-rb/helloworld-rb.rb            dryrun=true
+INFO[0000] Running stack: helloworld.toml                                     dryrun=true
+INFO[0000] Running logic: helloworld-py                                       dryrun=true
 INFO[0000] pip install -r tests/project/logic/helloworld-py/requirements.txt  dryrun=true
-INFO[0000] python tests/project/logic/helloworld-py/__init__.py  dryrun=true
-INFO[0000] Running logic: helloworld-rb             dryrun=true
-INFO[0000] cd tests/project/logic/helloworld-rb && bundle  dryrun=true
-INFO[0000] ruby tests/project/logic/helloworld-rb/helloworld-rb.rb  dryrun=true
+INFO[0000] python tests/project/logic/helloworld-py/__init__.py               dryrun=true
+INFO[0000] Running logic: helloworld-rb                                       dryrun=true
+INFO[0000] cd tests/project/logic/helloworld-rb && bundle                     dryrun=true
+INFO[0000] ruby tests/project/logic/helloworld-rb/helloworld-rb.rb            dryrun=true
 ```
 
 
