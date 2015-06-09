@@ -67,6 +67,13 @@ func main() {
 		}
 	}
 
+	if *cmdInput == "clean" {
+		err := engine.CleanProject()
+		if err != nil {
+			logrus.Fatal(err)
+		}
+	}
+
 	if *cmdInput == "new" {
 		err := engine.NewProject()
 		if err != nil {

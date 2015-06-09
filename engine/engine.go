@@ -97,6 +97,27 @@ func (e *Engine) IsGitRepo() bool {
 	return true
 }
 
+func (e *Engine) CleanProject() error {
+	if !e.IsGitRepo() {
+		return nil
+	}
+
+	cmd := exec.Command("git", "reset", "--hard")
+	cmd.Path = e.Root
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"error": err.Error(),
+		}).Fatal(string(output))
+
+		return err
+	}
+
+	logrus.Info(string(output))
+	return nil
+}
+
 func (e *Engine) NewProject() error {
 	// 1. Create tmp directory.
 	dir, err := ioutil.TempDir(os.TempDir(), "configurator")
