@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"regexp"
 	"strings"
 
 	"github.com/BurntSushi/toml"
@@ -240,10 +241,16 @@ func (e *Engine) checkIfRoleMatchedByHostname(rl role.Role) bool {
 		hostnameMatcherValue = e.Hostname
 	}
 
-	hostnameMatcherValueWithEnv := os.ExpandEnv(hostnameMatcherValue)
-
 	if hostnameMatcherOperator == "=" {
-		return e.Hostname == hostnameMatcherValueWithEnv
+		return e.Hostname == os.ExpandEnv(hostnameMatcherValue)
+
+	} else if hostnameMatcherOperator == "~" {
+		reg, err := regexp.Compile(hostnameMatcherValue)
+		if err != nil {
+			return false
+		}
+
+		return reg.MatchString(e.Hostname)
 	}
 
 	return false
