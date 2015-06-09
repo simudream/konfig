@@ -45,9 +45,9 @@ func New(root string) (*Engine, error) {
 	engine.Roles = roleFiles
 
 	engine.DryRun = true
-	engine.PythonPath = "/usr/bin/python"
-	engine.PipPath = "/usr/local/bin/pip"
-	engine.RubyPath = "/usr/bin/ruby"
+	engine.PythonPath = "python"
+	engine.PipPath = "pip"
+	engine.RubyPath = "ruby"
 	engine.BundlePath = "bundle"
 	engine.Hostname = hostname
 
@@ -301,6 +301,7 @@ func (e *Engine) RunRole(name string) ([]byte, error) {
 	return allOutput, nil
 }
 
+// RunRoles loop through all roles and apply only the one that matched host.
 func (e *Engine) RunRoles() ([]byte, error) {
 	allOutput := make([]byte, 0)
 
