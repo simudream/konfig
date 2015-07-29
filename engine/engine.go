@@ -322,6 +322,20 @@ func (e *Engine) RunStack(name string) ([]byte, error) {
 	}).Infof("Running stack: %v", name)
 
 	for _, step := range stk.Steps {
+		if strings.HasPrefix(step, "stacks/") {
+			stackName := strings.Replace(step, "stacks/", "", -1)
+
+			output, err := e.RunStack(stackName)
+			if err != nil {
+				logrus.WithFields(logrus.Fields{
+					"dryrun": e.DryRun,
+					"error":  err.Error(),
+				}).Errorf("Unable to run stack: %v", stackName)
+
+				return output, err
+			}
+		}
+
 		if strings.HasPrefix(step, "logic/") {
 			logicName := strings.Replace(step, "logic/", "", -1)
 
