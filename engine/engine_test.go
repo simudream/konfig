@@ -7,7 +7,7 @@ import (
 )
 
 func TestConstructor(t *testing.T) {
-	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/tests/project"))
+	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/resourced-stacks/tests/project"), "")
 	if err != nil {
 		t.Fatalf("Creating new engine should not fail. Error: %v", err)
 	}
@@ -23,14 +23,14 @@ func TestConstructor(t *testing.T) {
 }
 
 func TestIsGitRepo(t *testing.T) {
-	engine := &Engine{Root: os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator")}
+	engine := &Engine{Root: os.ExpandEnv("$GOPATH/src/github.com/resourced/resourced-stacks")}
 	if !engine.IsGitRepo() {
-		t.Fatalf(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator should be a git repo."))
+		t.Fatalf(os.ExpandEnv("$GOPATH/src/github.com/resourced/resourced-stacks should be a git repo."))
 	}
 }
 
 func TestInstallPythonLogicDependencies(t *testing.T) {
-	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/tests/project"))
+	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/resourced-stacks/tests/project"), "")
 	if err != nil {
 		t.Fatalf("Creating new engine should not fail. Error: %v", err)
 	}
@@ -48,7 +48,7 @@ func TestInstallPythonLogicDependencies(t *testing.T) {
 }
 
 func TestRunPythonLogic(t *testing.T) {
-	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/tests/project"))
+	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/resourced-stacks/tests/project"), "")
 	if err != nil {
 		t.Fatalf("Creating new engine should not fail. Error: %v", err)
 	}
@@ -69,7 +69,7 @@ func TestRunPythonLogic(t *testing.T) {
 }
 
 func TestInstallRubyLogicDependencies(t *testing.T) {
-	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/tests/project"))
+	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/resourced-stacks/tests/project"), "")
 	if err != nil {
 		t.Fatalf("Creating new engine should not fail. Error: %v", err)
 	}
@@ -81,7 +81,7 @@ func TestInstallRubyLogicDependencies(t *testing.T) {
 }
 
 func TestRunRubyLogic(t *testing.T) {
-	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/tests/project"))
+	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/resourced-stacks/tests/project"), "")
 	if err != nil {
 		t.Fatalf("Creating new engine should not fail. Error: %v", err)
 	}
@@ -93,7 +93,7 @@ func TestRunRubyLogic(t *testing.T) {
 }
 
 func TestReadStack(t *testing.T) {
-	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/tests/project"))
+	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/resourced-stacks/tests/project"), "")
 	if err != nil {
 		t.Fatalf("Creating new engine should not fail. Error: %v", err)
 	}
@@ -108,7 +108,7 @@ func TestReadStack(t *testing.T) {
 }
 
 func TestRunStack(t *testing.T) {
-	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/tests/project"))
+	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/resourced-stacks/tests/project"), "")
 	if err != nil {
 		t.Fatalf("Creating new engine should not fail. Error: %v", err)
 	}
@@ -116,62 +116,5 @@ func TestRunStack(t *testing.T) {
 	_, err = engine.RunStack("helloworld")
 	if err != nil {
 		t.Fatalf("RunStack should not fail. Error: %v", err)
-	}
-}
-
-func TestReadRole(t *testing.T) {
-	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/tests/project"))
-	if err != nil {
-		t.Fatalf("Creating new engine should not fail. Error: %v", err)
-	}
-
-	rl, err := engine.ReadRole("helloworld-staging.toml")
-	if err != nil {
-		t.Fatalf("ReadRole should not fail. Error: %v", err)
-	}
-	if len(rl.Steps) != 1 {
-		t.Fatalf("role steps should == 1. Length: %v", len(rl.Steps))
-	}
-	if rl.Steps[0] != "stacks/helloworld.toml" {
-		t.Fatalf("role steps[0] should == stacks/helloworld.toml. Step: %v", rl.Steps[0])
-	}
-
-	if len(rl.Matchers.Hostname) == 0 {
-		t.Fatalf("role hostname matcher should not be empty. Length: %v", len(rl.Matchers.Hostname))
-	}
-	if rl.Matchers.Hostname[0] != "=" {
-		t.Fatalf("role hostname matcher operator should be =. Operator: %v", rl.Matchers.Hostname[0])
-	}
-	if rl.Matchers.Hostname[1] != "$HOSTNAME" {
-		t.Fatalf("role hostname matcher value should be $HOSTNAME. Value: %v", rl.Matchers.Hostname[1])
-	}
-}
-
-func TestRunRole(t *testing.T) {
-	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/tests/project"))
-	if err != nil {
-		t.Fatalf("Creating new engine should not fail. Error: %v", err)
-	}
-
-	_, err = engine.RunRole("helloworld-staging.toml")
-	if err != nil {
-		t.Fatalf("RunRole should not fail. Error: %v", err)
-	}
-}
-
-func TestCheckIfRoleMatchedByHostname(t *testing.T) {
-	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/configurator/tests/project"))
-	if err != nil {
-		t.Fatalf("Creating new engine should not fail. Error: %v", err)
-	}
-
-	rl, err := engine.ReadRole("helloworld-staging.toml")
-	if err != nil {
-		t.Fatalf("ReadRole should not fail. Error: %v", err)
-	}
-
-	isMatched := engine.checkIfRoleMatchedByHostname(rl)
-	if isMatched != true {
-		t.Fatalf(`["=", "$HOSTNAME"] should always match any hostname. IsMatched: %v`, isMatched)
 	}
 }

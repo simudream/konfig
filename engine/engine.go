@@ -8,20 +8,24 @@ import (
 	"os"
 	"os/exec"
 	"path"
-	"regexp"
 	"strings"
 
 	"github.com/BurntSushi/toml"
 	"github.com/Sirupsen/logrus"
-	"github.com/resourced/configurator/role"
-	"github.com/resourced/configurator/stack"
+	"github.com/resourced/resourced-stacks/stack"
+	"github.com/robertkrimen/otto"
 )
 
 // New is the constructor for a new engine.
-func New(root string) (*Engine, error) {
-	engine := &Engine{Root: root}
+func New(root, conditions string) (*Engine, error) {
+	hostname, err := os.Hostname()
+	if err != nil {
+		return nil, err
+	}
 
-	err := os.MkdirAll(root, 0755)
+	engine := &Engine{Root: root, Hostname: hostname}
+
+	err = os.MkdirAll(root, 0755)
 	if err != nil {
 		return nil, err
 	}
@@ -36,26 +40,17 @@ func New(root string) (*Engine, error) {
 		return nil, err
 	}
 
-	roleFiles, err := engine.readDir("roles")
-	if err != nil {
-		return nil, err
-	}
-
-	hostname, err := os.Hostname()
-	if err != nil {
-		return nil, err
-	}
-
 	engine.Logic = logicDirs
 	engine.Stacks = stackFiles
-	engine.Roles = roleFiles
 
 	engine.DryRun = true
 	engine.PythonPath = "python"
 	engine.PipPath = "pip"
 	engine.RubyPath = "ruby"
 	engine.BundlePath = "bundle"
-	engine.Hostname = hostname
+	engine.jsVM = otto.New()
+
+	engine.SetConditions(conditions)
 
 	return engine, nil
 }
@@ -75,6 +70,9 @@ type Engine struct {
 	// BundlePath is the path to bundle executable.
 	BundlePath string
 
+	// Conditions to match before running stacks/logic.
+	Conditions string
+
 	DryRun bool
 
 	Hostname string
@@ -85,7 +83,28 @@ type Engine struct {
 
 	Logic  []os.FileInfo
 	Stacks []os.FileInfo
-	Roles  []os.FileInfo
+
+	jsVM *otto.Otto
+}
+
+// SetConditions format and assigns JS conditions.
+func (e *Engine) SetConditions(conditions string) {
+	if conditions == "" {
+		conditions = "true"
+	}
+
+	e.Conditions = conditions
+}
+
+func (e *Engine) EvalConditions() (bool, error) {
+	e.jsVM.Set("name", e.Hostname)
+	e.jsVM.Set("tags", make(map[string]string))
+
+	value, err := e.jsVM.Run(e.Conditions)
+	if err != nil {
+		return false, err
+	}
+	return value.ToBoolean()
 }
 
 // IsGitRepo checks if Root is a git repo.
@@ -120,7 +139,7 @@ func (e *Engine) CleanProject() error {
 
 func (e *Engine) NewProject() error {
 	// 1. Create tmp directory.
-	dir, err := ioutil.TempDir(os.TempDir(), "configurator")
+	dir, err := ioutil.TempDir(os.TempDir(), "resourced-stacks")
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"error": err.Error(),
@@ -129,7 +148,7 @@ func (e *Engine) NewProject() error {
 	defer os.RemoveAll(dir)
 
 	// 2. git clone to /tmp directory.
-	output, err := exec.Command("git", "clone", "https://github.com/resourced/configurator.git", dir).CombinedOutput()
+	output, err := exec.Command("git", "clone", "https://github.com/resourced/resourced-stacks.git", dir).CombinedOutput()
 	if err != nil {
 		os.RemoveAll(dir)
 
@@ -316,175 +335,6 @@ func (e *Engine) RunStack(name string) ([]byte, error) {
 				return output, err
 			}
 		}
-	}
-
-	return make([]byte, 0), nil
-}
-
-// ReadRole allows engine to read a particular role defined in TOML file.
-func (e *Engine) ReadRole(name string) (role.Role, error) {
-	var rl role.Role
-
-	if !strings.HasSuffix(name, ".toml") {
-		name = name + ".toml"
-	}
-
-	rolePath := path.Join(e.Root, "roles", name)
-	if _, err := toml.DecodeFile(rolePath, &rl); err != nil {
-		logrus.WithFields(logrus.Fields{
-			"dryrun": e.DryRun,
-			"error":  err.Error(),
-		}).Errorf("Unable to decode %v", rolePath)
-
-		return rl, err
-	}
-
-	rl.Name = name
-
-	return rl, nil
-}
-
-func (e *Engine) checkIfRoleMatched(rl role.Role) bool {
-	hostnameMatcherIsProvided := true
-	if rl.Matchers.Hostname == nil || len(rl.Matchers.Hostname) < 2 {
-		hostnameMatcherIsProvided = false
-	}
-
-	tagsMatcherIsProvided := true
-	if rl.Matchers.Tags == nil || len(rl.Matchers.Tags) < 1 {
-		tagsMatcherIsProvided = false
-	}
-
-	// There are no matchers provided.
-	if !hostnameMatcherIsProvided && !tagsMatcherIsProvided {
-		return false
-	}
-
-	if hostnameMatcherIsProvided {
-		logrus.WithFields(logrus.Fields{
-			"dryrun":   e.DryRun,
-			"hostname": e.Hostname,
-			"matcher:": rl.Matchers.Hostname,
-		}).Infof("Role %v matched.", rl.Name)
-
-		return e.checkIfRoleMatchedByHostname(rl)
-
-	} else if tagsMatcherIsProvided {
-		logrus.WithFields(logrus.Fields{
-			"dryrun":   e.DryRun,
-			"hostname": e.Hostname,
-			"matcher":  rl.Matchers.Tags,
-		}).Infof("Role %v matched.", rl.Name)
-
-		return e.checkIfRoleMatchedByTags(rl)
-	}
-
-	return false
-}
-
-func (e *Engine) checkIfRoleMatchedByHostname(rl role.Role) bool {
-	hostnameMatcherOperator := rl.Matchers.Hostname[0]
-	hostnameMatcherValue := rl.Matchers.Hostname[1]
-
-	// If value == "$HOSTNAME", substitute it to e.Hostname
-	if hostnameMatcherValue == "$HOSTNAME" {
-		hostnameMatcherValue = e.Hostname
-	}
-
-	if hostnameMatcherOperator == "=" {
-		return e.Hostname == os.ExpandEnv(hostnameMatcherValue)
-
-	} else if hostnameMatcherOperator == "~" {
-		reg, err := regexp.Compile(hostnameMatcherValue)
-		if err != nil {
-			return false
-		}
-
-		return reg.MatchString(e.Hostname)
-	}
-
-	return false
-}
-
-// checkIfRoleMatchedByTags loops through matchers.Tags and return true only if everything matches EC2Tags.
-// The format of matchers.Tag is: key:value
-func (e *Engine) checkIfRoleMatchedByTags(rl role.Role) bool {
-	for _, matcherTag := range rl.Matchers.Tags {
-		for _, ec2Tag := range e.EC2Tags {
-			for key, value := range ec2Tag {
-				if matcherTag != fmt.Sprintf("%v:%v", key, value) {
-					return false
-				}
-			}
-		}
-	}
-
-	return true
-}
-
-// RunRole allows engine to run a particular role.
-func (e *Engine) RunRole(name string) ([]byte, error) {
-	rl, err := e.ReadRole(name)
-	if err != nil {
-		return nil, err
-	}
-
-	if e.checkIfRoleMatched(rl) {
-		logrus.WithFields(logrus.Fields{
-			"dryrun": e.DryRun,
-		}).Infof("Running role: %v", name)
-
-		for _, step := range rl.Steps {
-			if strings.HasPrefix(step, "stacks/") {
-				stackName := strings.Replace(step, "stacks/", "", -1)
-
-				output, err := e.RunStack(stackName)
-				if err != nil {
-					logrus.WithFields(logrus.Fields{
-						"dryrun": e.DryRun,
-						"error":  err.Error(),
-					}).Errorf("Unable to run stack: %v", stackName)
-
-					return output, err
-				}
-			}
-
-			if strings.HasPrefix(step, "logic/") {
-				logicName := strings.Replace(step, "logic/", "", -1)
-
-				output, err := e.RunLogic(logicName)
-				if err != nil {
-					logrus.WithFields(logrus.Fields{
-						"dryrun": e.DryRun,
-						"error":  err.Error(),
-					}).Errorf("Unable to run logic: %v", logicName)
-
-					return output, err
-				}
-			}
-		}
-	}
-
-	return make([]byte, 0), nil
-}
-
-// RunRoles loop through all roles and apply the first one that matched host.
-func (e *Engine) RunRoles() ([]byte, error) {
-	for _, roleFile := range e.Roles {
-		if roleFile.IsDir() {
-			logrus.WithFields(logrus.Fields{
-				"dryrun": e.DryRun,
-			}).Warningf("roleFile: %v must always be a file.", roleFile.Name())
-
-			continue
-		}
-
-		output, err := e.RunRole(roleFile.Name())
-		if err != nil {
-			return output, err
-		}
-
-		return output, nil
 	}
 
 	return make([]byte, 0), nil

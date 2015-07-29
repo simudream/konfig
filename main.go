@@ -8,12 +8,14 @@ import (
 	"os"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/resourced/configurator/engine"
+	"github.com/resourced/resourced-stacks/engine"
 )
 
 func main() {
-	cmdInput := flag.String("cmd", "run", "Configurator command")
+	cmdInput := flag.String("cmd", "run", "Command")
 	rootInput := flag.String("root", "", "Project root directory")
+	stackInput := flag.String("stack", "", "Stack to run")
+	conditionsInput := flag.String("conditions", "true", "Conditions to match before running the command")
 	pythonInput := flag.String("python", "", "Path to python executable")
 	pipInput := flag.String("pip", "", "Path to pip executable")
 	rubyInput := flag.String("ruby", "", "Path to ruby executable")
@@ -30,7 +32,7 @@ func main() {
 		logrus.Fatal(err)
 	}
 
-	engine, err := engine.New(*rootInput)
+	engine, err := engine.New(*rootInput, *conditionsInput)
 	if err != nil {
 		logrus.Fatal(err)
 	}
@@ -38,6 +40,10 @@ func main() {
 	engine.DryRun = *dryRunInput
 
 	if *cmdInput == "run" {
+		if *stackInput == "" {
+			logrus.Fatal(errors.New("stack name must be specified."))
+		}
+
 		if *pythonInput != "" {
 			engine.PythonPath = *pythonInput
 		}
@@ -51,7 +57,16 @@ func main() {
 			engine.BundlePath = *bundleInput
 		}
 
-		output, err := engine.RunRoles()
+		conditionOutput, err := engine.EvalConditions()
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		if !conditionOutput {
+			logrus.Info("Conditions are not met")
+			os.Exit(0)
+		}
+
+		output, err := engine.RunStack(*stackInput)
 		if err != nil {
 			scanner := bufio.NewScanner(bytes.NewReader(output))
 			for scanner.Scan() {

@@ -1,7 +1,7 @@
 package role
 
 import (
-	"github.com/resourced/configurator/stack"
+	"github.com/resourced/resourced-stacks/stack"
 )
 
 type Role struct {
