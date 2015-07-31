@@ -250,11 +250,13 @@ func (e *Engine) RunPythonLogic(name string) ([]byte, error) {
 
 // InstallRubyLogicDependencies allows engine to installs dependencies for a logic written in ruby.
 func (e *Engine) InstallRubyLogicDependencies(name string) ([]byte, error) {
+	installCommand := fmt.Sprintf("%v install --path vendor && %v package", e.BundlePath, e.BundlePath)
+
 	logicPath := path.Join(e.Root, "logic", name)
 	if e.DryRun {
 		logrus.WithFields(logrus.Fields{
 			"dryrun": e.DryRun,
-		}).Infof("cd %v && %v", logicPath, e.BundlePath)
+		}).Infof("cd %v && %v", logicPath, installCommand)
 
 		return nil, nil
 	}
@@ -264,7 +266,7 @@ func (e *Engine) InstallRubyLogicDependencies(name string) ([]byte, error) {
 		return make([]byte, 0), nil
 	}
 
-	cmd := exec.Command(e.BundlePath)
+	cmd := exec.Command(installCommand)
 	cmd.Path = logicPath
 
 	return cmd.CombinedOutput()
