@@ -197,7 +197,7 @@ func (e *Engine) RunLogic(name string) ([]byte, error) {
 	}
 
 	if os.IsNotExist(pyErr) || os.IsNotExist(rbErr) {
-		err := errors.New(fmt.Sprintf("Logic must be implemented in Python(%v/__init__.py) or Ruby(%v/%v.rb)", name, name, name))
+		err := errors.New(fmt.Sprintf("Logic must be implemented in Python(%v/__init__.py)", name))
 
 		logrus.WithFields(logrus.Fields{
 			"dryrun": e.DryRun,

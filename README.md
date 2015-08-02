@@ -10,7 +10,7 @@ Task runner, file stamper, quite possible the simplest configuration management 
 
 * We are very serious about simple workflow. Logic->Stack, that's all.
 
-    * **Logic:** This is how you implement the task. You can use Ruby or Python.
+    * **Logic:** Write a python script to accomplish a particular task. Use JSON format for both stdin and stdout.
 
     * **Stack:** This is how you can create a mixins of logic or other stacks.
 
