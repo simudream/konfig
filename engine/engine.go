@@ -46,8 +46,6 @@ func New(root, conditions string) (*Engine, error) {
 	engine.DryRun = true
 	engine.PythonPath = "python"
 	engine.PipPath = "pip"
-	engine.RubyPath = "ruby"
-	engine.BundlePath = "bundle"
 	engine.jsVM = otto.New()
 
 	engine.SetConditions(conditions)
@@ -63,12 +61,6 @@ type Engine struct {
 
 	// PipPath is the path to pip executable.
 	PipPath string
-
-	// RubyPath is the path to ruby executable.
-	RubyPath string
-
-	// BundlePath is the path to bundle executable.
-	BundlePath string
 
 	// Conditions to match before running stacks/logic.
 	Conditions string
@@ -190,13 +182,7 @@ func (e *Engine) RunLogic(name string) ([]byte, error) {
 		return e.RunPythonLogic(name)
 	}
 
-	rubyExecPath := path.Join(e.Root, "logic", name, name+".rb")
-	_, rbErr := os.Stat(rubyExecPath)
-	if rbErr == nil {
-		return e.RunRubyLogic(name)
-	}
-
-	if os.IsNotExist(pyErr) || os.IsNotExist(rbErr) {
+	if os.IsNotExist(pyErr) {
 		err := errors.New(fmt.Sprintf("Logic must be implemented in Python(%v/__init__.py)", name))
 
 		logrus.WithFields(logrus.Fields{
@@ -246,49 +232,6 @@ func (e *Engine) RunPythonLogic(name string) ([]byte, error) {
 	}
 
 	return exec.Command(e.PythonPath, execPath).CombinedOutput()
-}
-
-// InstallRubyLogicDependencies allows engine to installs dependencies for a logic written in ruby.
-func (e *Engine) InstallRubyLogicDependencies(name string) ([]byte, error) {
-	installCommand := fmt.Sprintf("%v install --path vendor && %v package", e.BundlePath, e.BundlePath)
-
-	logicPath := path.Join(e.Root, "logic", name)
-	if e.DryRun {
-		logrus.WithFields(logrus.Fields{
-			"dryrun": e.DryRun,
-		}).Infof("cd %v && %v", logicPath, installCommand)
-
-		return nil, nil
-	}
-
-	_, err := os.Stat(logicPath)
-	if err != nil {
-		return make([]byte, 0), nil
-	}
-
-	cmd := exec.Command(installCommand)
-	cmd.Path = logicPath
-
-	return cmd.CombinedOutput()
-}
-
-// RunRubyLogic allows engine to run a logic written in ruby.
-func (e *Engine) RunRubyLogic(name string) ([]byte, error) {
-	_, err := e.InstallRubyLogicDependencies(name)
-	if err != nil {
-		return nil, err
-	}
-
-	execPath := path.Join(e.Root, "logic", name, name+".rb")
-	if e.DryRun {
-		logrus.WithFields(logrus.Fields{
-			"dryrun": e.DryRun,
-		}).Infof("%v %v", e.RubyPath, execPath)
-
-		return nil, nil
-	}
-
-	return exec.Command(e.RubyPath, execPath).CombinedOutput()
 }
 
 // ReadStack allows engine to read a particular stack defined in TOML file.

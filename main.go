@@ -18,8 +18,6 @@ func main() {
 	conditionsInput := flag.String("conditions", "true", "Conditions to match before running the command")
 	pythonInput := flag.String("python", "", "Path to python executable")
 	pipInput := flag.String("pip", "", "Path to pip executable")
-	rubyInput := flag.String("ruby", "", "Path to ruby executable")
-	bundleInput := flag.String("bundle", "", "Path to bundle executable")
 	dryRunInput := flag.Bool("dryrun", true, "Dry run mode")
 
 	flag.Parse()
@@ -49,12 +47,6 @@ func main() {
 		}
 		if *pipInput != "" {
 			engine.PipPath = *pipInput
-		}
-		if *rubyInput != "" {
-			engine.RubyPath = *rubyInput
-		}
-		if *bundleInput != "" {
-			engine.BundlePath = *bundleInput
 		}
 
 		conditionOutput, err := engine.EvalConditions()
