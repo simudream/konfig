@@ -1,1 +1,1 @@
-The base classes of logic layer. They are implemented in 2 languages: Python and Ruby.
+Your logics inherit from this base class.

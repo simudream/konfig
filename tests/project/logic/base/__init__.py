@@ -30,11 +30,12 @@ class Base(object):
         self._read_data_dir()
 
     def _read_stdin(self):
-        try:
-            self.data = json.loads(sys.stdin.read())
-        except ValueError:
-            print('{"error": "Input from stdin is not in JSON format"}')
-            sys.exit(1)
+        if not sys.stdin.isatty(): # Avoid blocking on empty stdin
+            try:
+                self.data = json.loads(sys.stdin.read())
+            except ValueError:
+                print('{"error": "Input from stdin is not in JSON format"}')
+                sys.exit(1)
 
     def _read_data_dir(self):
         data_dir = os.path.join(self.current_dir(), 'data')
@@ -42,14 +43,23 @@ class Base(object):
             return
 
         for filename in os.listdir(data_dir):
-            if filename.lower().startswith('readme'):
-                continue
+            if filename.endswith('.json'):
+                key = filename.replace('.json', '')
 
-            full_filename = os.path.join(data_dir, filename)
-            with open(full_filename) as f:
-                if full_filename.endswith('.json'):
-                    for key, value in json.loads(f.read()).items():
-                        self.data[key] = value
+                full_filename = os.path.join(data_dir, filename)
+                with open(full_filename) as f:
+                    new_data = json.loads(f.read())
+
+                    if key in self.data:
+                        # Merge or append new items to existing list
+                        if isinstance(self.data[key], list):
+                            if isinstance(new_data, list):
+                                self.data[key].extend(new_data)
+                            else:
+                                self.data[key].append(new_data)
+
+                    else:
+                        self.data[key] = new_data
 
     def current_dir(self):
         return os.path.dirname(os.path.realpath(sys.modules[self.__module__].__file__))
