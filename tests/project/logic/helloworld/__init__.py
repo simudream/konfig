@@ -25,7 +25,8 @@ class HelloWorld(base.Base):
         return output_json
 
     def run(self):
-        self.write_file('helloworld.txt.tmpl', '/tmp/helloworld.txt', users=self.data.get('users', []))
+        if not self.args.dryrun:
+            self.write_file('helloworld.txt.tmpl', '/tmp/helloworld.txt', users=self.data.get('users', []))
         return self.dryrun()
 
 

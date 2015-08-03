@@ -7,6 +7,7 @@ from __future__ import with_statement
 import os
 import os.path
 import sys
+import argparse
 import json
 import socket
 import jinja2
@@ -14,11 +15,17 @@ import jinja2
 
 class Base(object):
     def __init__(self):
-        self.dryrun_flag = True
+        self._setup_argsparser()
         self.hostname = socket.gethostname()
-        self.data = {}
         self._read_data()
         self._setup_template()
+
+    def _setup_argsparser(self):
+        self.argsparser = argparse.ArgumentParser(description='Logic runner for {0}'.format(self.__class__.__name__))
+        self.argsparser.add_argument('--dryrun', dest='dryrun', action='store_true')
+        self.argsparser.add_argument('--no-dryrun', dest='dryrun', action='store_false')
+        self.argsparser.set_defaults(dryrun=True)
+        self.args = self.argsparser.parse_args()
 
     def _setup_template(self):
         templates_dir = os.path.join(self.current_dir(), 'templates')
@@ -26,13 +33,16 @@ class Base(object):
             self.template = jinja2.Environment(loader=jinja2.FileSystemLoader(templates_dir), trim_blocks=True)
 
     def _read_data(self):
+        self.data = {}
         self._read_stdin()
         self._read_data_dir()
 
     def _read_stdin(self):
         if not sys.stdin.isatty(): # Avoid blocking on empty stdin
             try:
-                self.data = json.loads(sys.stdin.read())
+                input_data = sys.stdin.read()
+                if input_data:
+                    self.data = json.loads(input_data)
             except ValueError:
                 print('{"error": "Input from stdin is not in JSON format"}')
                 sys.exit(1)
@@ -74,7 +84,7 @@ class Base(object):
             fh.write(file_content)
 
     def exec_or_print(self, command):
-        if self.dryrun_flag:
+        if self.args.dryrun:
             print(command)
             return 0
         else:
@@ -87,3 +97,7 @@ class Base(object):
 
     def run(self):
         return self.dryrun()
+
+
+if __name__ == "__main__":
+    Base().run()

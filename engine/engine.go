@@ -174,7 +174,7 @@ func (e *Engine) readDir(dirname string) ([]os.FileInfo, error) {
 func (e *Engine) RunLogic(name string) ([]byte, error) {
 	logrus.WithFields(logrus.Fields{
 		"dryrun": e.DryRun,
-	}).Infof("Running logic: %v", name)
+	}).Infof("Starting logic: %v", name)
 
 	pythonExecPath := path.Join(e.Root, "logic", name, "__init__.py")
 	_, pyErr := os.Stat(pythonExecPath)
@@ -188,6 +188,7 @@ func (e *Engine) RunLogic(name string) ([]byte, error) {
 		logrus.WithFields(logrus.Fields{
 			"dryrun": e.DryRun,
 			"error":  err.Error(),
+			"path":   pythonExecPath,
 		}).Errorf("Unable to run logic: %v", name)
 
 		return nil, err
@@ -199,20 +200,35 @@ func (e *Engine) RunLogic(name string) ([]byte, error) {
 // InstallPythonLogicDependencies allows engine to installs dependencies for a logic written in python.
 func (e *Engine) InstallPythonLogicDependencies(name string) ([]byte, error) {
 	reqPath := path.Join(e.Root, "logic", name, "requirements.txt")
+
+	commandChunks := []string{e.PipPath, "install", "-r", reqPath}
+
+	_, err := os.Stat(reqPath)
+	if err != nil {
+		return nil, err
+	}
+
 	if e.DryRun {
 		logrus.WithFields(logrus.Fields{
 			"dryrun": e.DryRun,
-		}).Infof("%v install -r %v", e.PipPath, reqPath)
+		}).Infof("Executing: " + strings.Join(commandChunks, " "))
 
 		return nil, nil
 	}
 
-	_, err := os.Stat(reqPath)
+	output, err := exec.Command(commandChunks[0], commandChunks[1:]...).CombinedOutput()
 	if err != nil {
-		return make([]byte, 0), nil
+		logrus.WithFields(logrus.Fields{
+			"dryrun": e.DryRun,
+			"error":  err.Error(),
+		}).Infof("Failed executing: " + strings.Join(commandChunks, " "))
+	} else {
+		logrus.WithFields(logrus.Fields{
+			"dryrun": e.DryRun,
+		}).Infof("Executed: " + strings.Join(commandChunks, " "))
 	}
 
-	return exec.Command(e.PipPath, "install", "-r", reqPath).CombinedOutput()
+	return output, err
 }
 
 // RunPythonLogic allows engine to run a logic written in python.
@@ -223,26 +239,34 @@ func (e *Engine) RunPythonLogic(name string) ([]byte, error) {
 	}
 
 	execPath := path.Join(e.Root, "logic", name, "__init__.py")
-	if e.DryRun {
-		logrus.WithFields(logrus.Fields{
-			"dryrun": e.DryRun,
-		}).Infof("%v %v", e.PythonPath, execPath)
+	commandChunks := []string{e.PythonPath, execPath}
 
-		return nil, nil
+	if e.DryRun {
+		commandChunks = append(commandChunks, "--dryrun")
+	} else {
+		commandChunks = append(commandChunks, "--no-dryrun")
 	}
 
-	return exec.Command(e.PythonPath, execPath).CombinedOutput()
+	output, err := exec.Command(e.PythonPath, execPath).CombinedOutput()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"dryrun": e.DryRun,
+			"error":  err.Error(),
+		}).Infof("Failed executing: " + strings.Join(commandChunks, " "))
+	} else {
+		logrus.WithFields(logrus.Fields{
+			"dryrun": e.DryRun,
+		}).Infof("Executed: " + strings.Join(commandChunks, " "))
+	}
+
+	return output, err
 }
 
 // ReadStack allows engine to read a particular stack defined in TOML file.
 func (e *Engine) ReadStack(name string) (stack.Stack, error) {
 	var stk stack.Stack
 
-	if !strings.HasSuffix(name, ".toml") {
-		name = name + ".toml"
-	}
-
-	stackPath := path.Join(e.Root, "stacks", name)
+	stackPath := path.Join(e.Root, "stacks", name, name+".toml")
 	if _, err := toml.DecodeFile(stackPath, &stk); err != nil {
 		logrus.WithFields(logrus.Fields{
 			"dryrun": e.DryRun,
@@ -264,7 +288,7 @@ func (e *Engine) RunStack(name string) ([]byte, error) {
 
 	logrus.WithFields(logrus.Fields{
 		"dryrun": e.DryRun,
-	}).Infof("Running stack: %v", name)
+	}).Infof("Starting stack: %v", name)
 
 	for _, step := range stk.Steps {
 		if strings.HasPrefix(step, "stacks/") {
@@ -289,6 +313,7 @@ func (e *Engine) RunStack(name string) ([]byte, error) {
 				logrus.WithFields(logrus.Fields{
 					"dryrun": e.DryRun,
 					"error":  err.Error(),
+					"output": string(output),
 				}).Errorf("Unable to run logic: %v", logicName)
 
 				return output, err
