@@ -58,7 +58,7 @@ func main() {
 			os.Exit(0)
 		}
 
-		output, err := engine.RunStack(*stackInput)
+		output, err := engine.RunStack(*stackInput, nil)
 		if err != nil {
 			scanner := bufio.NewScanner(bytes.NewReader(output))
 			for scanner.Scan() {

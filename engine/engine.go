@@ -2,6 +2,8 @@
 package engine
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -30,12 +32,12 @@ func New(root, conditions string) (*Engine, error) {
 		return nil, err
 	}
 
-	logicDirs, err := engine.readDir("logic")
+	logicDirs, err := ioutil.ReadDir(path.Join(engine.Root, "logic"))
 	if err != nil {
 		return nil, err
 	}
 
-	stackFiles, err := engine.readDir("stacks")
+	stackFiles, err := ioutil.ReadDir(path.Join(engine.Root, "stacks"))
 	if err != nil {
 		return nil, err
 	}
@@ -166,12 +168,8 @@ func (e *Engine) NewProject() error {
 	return nil
 }
 
-func (e *Engine) readDir(dirname string) ([]os.FileInfo, error) {
-	return ioutil.ReadDir(path.Join(e.Root, dirname))
-}
-
 // RunLogic allows engine to execute one logic layer.
-func (e *Engine) RunLogic(name string) ([]byte, error) {
+func (e *Engine) RunLogic(name string, data map[string]interface{}) ([]byte, error) {
 	logrus.WithFields(logrus.Fields{
 		"dryrun": e.DryRun,
 	}).Infof("Starting logic: %v", name)
@@ -179,7 +177,7 @@ func (e *Engine) RunLogic(name string) ([]byte, error) {
 	pythonExecPath := path.Join(e.Root, "logic", name, "__init__.py")
 	_, pyErr := os.Stat(pythonExecPath)
 	if pyErr == nil {
-		return e.RunPythonLogic(name)
+		return e.RunPythonLogic(name, data)
 	}
 
 	if os.IsNotExist(pyErr) {
@@ -232,8 +230,13 @@ func (e *Engine) InstallPythonLogicDependencies(name string) ([]byte, error) {
 }
 
 // RunPythonLogic allows engine to run a logic written in python.
-func (e *Engine) RunPythonLogic(name string) ([]byte, error) {
+func (e *Engine) RunPythonLogic(name string, data map[string]interface{}) ([]byte, error) {
 	_, err := e.InstallPythonLogicDependencies(name)
+	if err != nil {
+		return nil, err
+	}
+
+	inJson, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +250,10 @@ func (e *Engine) RunPythonLogic(name string) ([]byte, error) {
 		commandChunks = append(commandChunks, "--no-dryrun")
 	}
 
-	output, err := exec.Command(e.PythonPath, execPath).CombinedOutput()
+	cmd := exec.Command(commandChunks[0], commandChunks[1:]...)
+	cmd.Stdin = bytes.NewReader(inJson)
+
+	output, err := cmd.CombinedOutput()
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"dryrun": e.DryRun,
@@ -279,22 +285,79 @@ func (e *Engine) ReadStack(name string) (stack.Stack, error) {
 	return stk, nil
 }
 
+// ReadStackData allows engine to read stack data defined in JSON.
+// This data will be passed to logics via STDIN.
+func (e *Engine) ReadStackData(name string) (map[string]interface{}, error) {
+	data := make(map[string]interface{})
+	dataPath := path.Join(e.Root, "stacks", name, "data")
+
+	// Skip if data directory does not exist.
+	if _, err := os.Stat(dataPath); err != nil {
+		if os.IsNotExist(err) {
+			return data, nil
+		}
+	}
+
+	jsonFiles, err := ioutil.ReadDir(dataPath)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, jsonFile := range jsonFiles {
+		if strings.HasSuffix(jsonFile.Name(), ".json") {
+			fileContent, err := ioutil.ReadFile(path.Join(dataPath, jsonFile.Name()))
+			if err != nil {
+				return nil, err
+			}
+
+			var jsonData interface{}
+			err = json.Unmarshal(fileContent, &jsonData)
+			if err != nil {
+				return nil, err
+			}
+
+			data[strings.Replace(jsonFile.Name(), ".json", "", -1)] = jsonData
+		}
+	}
+
+	return data, nil
+}
+
 // RunStack allows engine to run a particular stack.
-func (e *Engine) RunStack(name string) ([]byte, error) {
+func (e *Engine) RunStack(name string, data map[string]interface{}) ([]byte, error) {
+	logrus.WithFields(logrus.Fields{
+		"dryrun": e.DryRun,
+	}).Infof("Starting stack: %v", name)
+
 	stk, err := e.ReadStack(name)
 	if err != nil {
 		return nil, err
 	}
 
-	logrus.WithFields(logrus.Fields{
-		"dryrun": e.DryRun,
-	}).Infof("Starting stack: %v", name)
+	// Create data if nil
+	if data == nil {
+		data = make(map[string]interface{})
+	}
+
+	newData, err := e.ReadStackData(name)
+	if err != nil {
+		return nil, err
+	}
+
+	for key, value := range newData {
+		if _, ok := data[key]; !ok {
+			data[key] = value
+		}
+	}
 
 	for _, step := range stk.Steps {
+		var output []byte
+		var outputInterface interface{}
+
 		if strings.HasPrefix(step, "stacks/") {
 			stackName := strings.Replace(step, "stacks/", "", -1)
 
-			output, err := e.RunStack(stackName)
+			output, err = e.RunStack(stackName, data)
 			if err != nil {
 				logrus.WithFields(logrus.Fields{
 					"dryrun": e.DryRun,
@@ -308,7 +371,7 @@ func (e *Engine) RunStack(name string) ([]byte, error) {
 		if strings.HasPrefix(step, "logic/") {
 			logicName := strings.Replace(step, "logic/", "", -1)
 
-			output, err := e.RunLogic(logicName)
+			output, err = e.RunLogic(logicName, data)
 			if err != nil {
 				logrus.WithFields(logrus.Fields{
 					"dryrun": e.DryRun,
@@ -318,6 +381,15 @@ func (e *Engine) RunStack(name string) ([]byte, error) {
 
 				return output, err
 			}
+		}
+
+		// Capture previous output and pass it as part of data
+		if output != nil && len(output) > 0 {
+			err = json.Unmarshal(output, &outputInterface)
+			if err != nil {
+				return output, err
+			}
+			data["previous_step"] = outputInterface
 		}
 	}
 

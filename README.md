@@ -25,14 +25,11 @@ Task runner, file stamper, quite possible the simplest configuration management 
 
 ## Example when running locally
 ```
-resourced-stacks -root=./tests/project -cmd=run -stack=helloworld
-INFO[0000] Running stack: helloworld                                          dryrun=true
-INFO[0000] Running logic: helloworld-py                                       dryrun=true
-INFO[0000] pip install -r tests/project/logic/helloworld-py/requirements.txt  dryrun=true
-INFO[0000] python tests/project/logic/helloworld-py/__init__.py               dryrun=true
-INFO[0000] Running logic: helloworld-rb                                       dryrun=true
-INFO[0000] cd tests/project/logic/helloworld-rb && bundle                     dryrun=true
-INFO[0000] ruby tests/project/logic/helloworld-rb/helloworld-rb.rb            dryrun=true
+resourced-stacks -root=./tests/project -cmd=run -stack=helloworld -dryrun=false
+INFO[0000] Starting stack: helloworld                                               dryrun=false
+INFO[0000] Starting logic: helloworld                                               dryrun=false
+INFO[0001] Executed: pip install -r tests/project/logic/helloworld/requirements.txt dryrun=false
+INFO[0001] Executed: python tests/project/logic/helloworld/__init__.py --no-dryrun  dryrun=false
 ```
 
 

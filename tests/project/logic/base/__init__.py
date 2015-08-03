@@ -42,7 +42,7 @@ class Base(object):
             try:
                 input_data = sys.stdin.read()
                 if input_data:
-                    self.data = json.loads(input_data)
+                    self.data = json.loads(input_data) or {}
             except ValueError:
                 print('{"error": "Input from stdin is not in JSON format"}')
                 sys.exit(1)
