@@ -81,7 +81,7 @@ func main() {
 	}
 
 	if *cmdInput == "pull" {
-		err := engine.GitCleanPull()
+		err := engine.GitPull()
 		if err != nil {
 			logrus.Fatal(err)
 		}
