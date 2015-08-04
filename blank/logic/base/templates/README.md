@@ -1,1 +1,1 @@
-`/templates` directory is where you put logic templates.
+This is where you put the jinja template for stamping files.

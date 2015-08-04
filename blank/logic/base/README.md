@@ -1,5 +1,3 @@
-This is where we put the base classes of logic layer. They are implemented in 2 languages: Python and Ruby.
+### The base logic
 
-Every logic contains `/data` directory to store logic metadata.
-
-If you need dynamic data, query it from resourced agent or master.
+Each of your logic script must inherit from this base class.
