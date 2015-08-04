@@ -16,9 +16,13 @@ func main() {
 	rootInput := flag.String("root", "", "Project root directory")
 	stackInput := flag.String("stack", "", "Stack to run")
 	conditionsInput := flag.String("conditions", "true", "Conditions to match before running the command")
-	pythonInput := flag.String("python", "", "Path to python executable")
-	pipInput := flag.String("pip", "", "Path to pip executable")
+	pythonInput := flag.String("python", "python", "Path to python executable")
+	pipInput := flag.String("pip", "pip", "Path to pip executable")
 	dryRunInput := flag.Bool("dryrun", true, "Dry run mode")
+
+	// git related options
+	gitInput := flag.String("git", "", "HTTPS URL to git repo")
+	gitBranchInput := flag.String("git-branch", "master", "Checkout a specific branch")
 
 	flag.Parse()
 
@@ -36,6 +40,8 @@ func main() {
 	}
 
 	engine.DryRun = *dryRunInput
+	engine.Git.HTTPS = *gitInput
+	engine.Git.Branch = *gitBranchInput
 
 	if *cmdInput == "run" {
 		if *stackInput == "" {
@@ -74,8 +80,8 @@ func main() {
 		}
 	}
 
-	if *cmdInput == "clean" {
-		err := engine.CleanProject()
+	if *cmdInput == "pull" {
+		err := engine.GitCleanPull()
 		if err != nil {
 			logrus.Fatal(err)
 		}

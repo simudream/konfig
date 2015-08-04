@@ -71,12 +71,14 @@ type Engine struct {
 
 	Hostname string
 
-	EC2Tags []map[string]string
-
-	GitBranch string
-
 	Logic  []os.FileInfo
 	Stacks []os.FileInfo
+
+	// Configuration for git repo
+	Git struct {
+		HTTPS  string
+		Branch string
+	}
 
 	jsVM *otto.Otto
 }
@@ -99,36 +101,6 @@ func (e *Engine) EvalConditions() (bool, error) {
 		return false, err
 	}
 	return value.ToBoolean()
-}
-
-// IsGitRepo checks if Root is a git repo.
-func (e *Engine) IsGitRepo() bool {
-	_, err := os.Stat(path.Join(e.Root, ".git"))
-	if err != nil {
-		return false
-	}
-	return true
-}
-
-func (e *Engine) CleanProject() error {
-	if !e.IsGitRepo() {
-		return nil
-	}
-
-	cmd := exec.Command("git", "reset", "--hard")
-	cmd.Path = e.Root
-
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err.Error(),
-		}).Fatal(string(output))
-
-		return err
-	}
-
-	logrus.Info(string(output))
-	return nil
 }
 
 func (e *Engine) NewProject() error {
