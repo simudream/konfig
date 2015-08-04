@@ -3,7 +3,9 @@
 
 **ResourceD Stacks:**
 
-Task runner, file stamper, quite possible the simplest configuration management you've ever seen.
+Task runner, file stamper, and more.
+
+It is quite possible the simplest configuration management you've ever seen.
 
 
 ## Comparison to existing solutions:
@@ -12,34 +14,39 @@ Task runner, file stamper, quite possible the simplest configuration management 
 
     * **Logic:** Write a python script to accomplish a particular task. Use JSON format for both stdin and stdout.
 
-    * **Stack:** This is how you can create a mixins of logic or other stacks.
+    * **Stack:** This is how you can create a mixins of logic and other stacks in sequential order.
 
-* **IT DOES NOT USE DSL.**
+* **IT DOES NOT USE DSL**
 
 * Dry run switch is `true` by default.
 
-* It uses git to store and version metadata.
+* Built-in testing story. Every logic **MUST** contain test files.
 
-* It understands EC2 tags and use them for role matching.
+* It uses git for versioning and deploying on a remote host.
 
 
 ## Example when running locally
 ```
 resourced-stacks -root=./tests/project -cmd=run -stack=helloworld -dryrun=false
-INFO[0000] Starting stack: helloworld                                               dryrun=false
-INFO[0000] Starting logic: helloworld                                               dryrun=false
-INFO[0001] Executed: pip install -r tests/project/logic/helloworld/requirements.txt dryrun=false
-INFO[0001] Executed: python tests/project/logic/helloworld/__init__.py --no-dryrun  dryrun=false
+INFO[0000] Starting stack: helloworld                                                dryrun=false
+INFO[0000] Reading data for stack: helloworld                                        dryrun=false
+INFO[0000] Running tests for logic: helloworld                                       dryrun=false
+INFO[0000] Installing dependencies for logic: helloworld                             dryrun=false
+INFO[0002] Executed: pip install -r tests/project/logic/helloworld/requirements.txt  dryrun=false
+INFO[0002] Checking if test files exist for logic: helloworld                        dryrun=false
+INFO[0002] Executed: python tests/project/logic/helloworld/__init__test.py           dryrun=false
+INFO[0002] Starting logic: helloworld                                                dryrun=false
+INFO[0002] Installing dependencies for logic: helloworld                             dryrun=false
+INFO[0002] Executed: pip install -r tests/project/logic/helloworld/requirements.txt  dryrun=false
+INFO[0002] Executed: python tests/project/logic/helloworld/__init__.py --no-dryrun   dryrun=false
 ```
 
 
 ## Prerequisites
 
-* Git
+* Git for versioning and deploying on a remote host.
 
-* Python and Pip, or
-
-* Ruby and Bundler.
+* Python and Pip for implementing logic.
 
 
 ## CLI mode

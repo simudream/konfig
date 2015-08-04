@@ -168,6 +168,75 @@ func (e *Engine) NewProject() error {
 	return nil
 }
 
+// FindPythonLogicTest ensures every python logic have tests
+func (e *Engine) FindPythonLogicTest(name string) (string, error) {
+	logrus.WithFields(logrus.Fields{
+		"dryrun": e.DryRun,
+	}).Infof("Checking if test files exist for logic: %v", name)
+
+	files, err := ioutil.ReadDir(path.Join(e.Root, "logic", name))
+	if err != nil {
+		return "", err
+	}
+
+	foundTestFile := false
+	testFile := ""
+
+	for _, file := range files {
+		if strings.HasSuffix(file.Name(), "test.py") {
+			foundTestFile = true
+			testFile = file.Name()
+		}
+	}
+	if !foundTestFile {
+		err = errors.New(fmt.Sprintf("Logic: %v does not contain any tests", name))
+
+		logrus.WithFields(logrus.Fields{
+			"dryrun": e.DryRun,
+			"error":  err.Error(),
+		}).Errorf("Unable to find test files for logic: %v", name)
+
+		return "", err
+	}
+
+	return testFile, nil
+}
+
+// RunPythonLogicTest ensures every python logic has passing tests.
+func (e *Engine) RunPythonLogicTest(name string) ([]byte, error) {
+	logrus.WithFields(logrus.Fields{
+		"dryrun": e.DryRun,
+	}).Infof("Running tests for logic: %v", name)
+
+	_, err := e.InstallPythonLogicDependencies(name)
+	if err != nil {
+		return nil, err
+	}
+
+	testFile, err := e.FindPythonLogicTest(name)
+	if err != nil {
+		return nil, err
+	}
+
+	execPath := path.Join(e.Root, "logic", name, testFile)
+	commandChunks := []string{e.PythonPath, execPath}
+
+	output, err := exec.Command(commandChunks[0], commandChunks[1:]...).CombinedOutput()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"dryrun": e.DryRun,
+			"error":  err.Error(),
+			"output": string(output),
+		}).Errorf("Tests failed for logic: %v", name)
+	} else {
+		logrus.WithFields(logrus.Fields{
+			"dryrun": e.DryRun,
+		}).Infof("Executed: " + strings.Join(commandChunks, " "))
+	}
+
+	return output, err
+}
+
 // RunLogic allows engine to execute one logic layer.
 func (e *Engine) RunLogic(name string, data map[string]interface{}) ([]byte, error) {
 	logrus.WithFields(logrus.Fields{
@@ -176,11 +245,8 @@ func (e *Engine) RunLogic(name string, data map[string]interface{}) ([]byte, err
 
 	pythonExecPath := path.Join(e.Root, "logic", name, "__init__.py")
 	_, pyErr := os.Stat(pythonExecPath)
-	if pyErr == nil {
-		return e.RunPythonLogic(name, data)
-	}
 
-	if os.IsNotExist(pyErr) {
+	if os.IsNotExist(pyErr) || pyErr != nil {
 		err := errors.New(fmt.Sprintf("Logic must be implemented in Python(%v/__init__.py)", name))
 
 		logrus.WithFields(logrus.Fields{
@@ -192,11 +258,15 @@ func (e *Engine) RunLogic(name string, data map[string]interface{}) ([]byte, err
 		return nil, err
 	}
 
-	return nil, nil
+	return e.RunPythonLogic(name, data)
 }
 
 // InstallPythonLogicDependencies allows engine to installs dependencies for a logic written in python.
 func (e *Engine) InstallPythonLogicDependencies(name string) ([]byte, error) {
+	logrus.WithFields(logrus.Fields{
+		"dryrun": e.DryRun,
+	}).Infof("Installing dependencies for logic: %v", name)
+
 	reqPath := path.Join(e.Root, "logic", name, "requirements.txt")
 
 	commandChunks := []string{e.PipPath, "install", "-r", reqPath}
@@ -288,6 +358,10 @@ func (e *Engine) ReadStack(name string) (stack.Stack, error) {
 // ReadStackData allows engine to read stack data defined in JSON.
 // This data will be passed to logics via STDIN.
 func (e *Engine) ReadStackData(name string) (map[string]interface{}, error) {
+	logrus.WithFields(logrus.Fields{
+		"dryrun": e.DryRun,
+	}).Infof("Reading data for stack: %v", name)
+
 	data := make(map[string]interface{})
 	dataPath := path.Join(e.Root, "stacks", name, "data")
 
@@ -359,11 +433,6 @@ func (e *Engine) RunStack(name string, data map[string]interface{}) ([]byte, err
 
 			output, err = e.RunStack(stackName, data)
 			if err != nil {
-				logrus.WithFields(logrus.Fields{
-					"dryrun": e.DryRun,
-					"error":  err.Error(),
-				}).Errorf("Unable to run stack: %v", stackName)
-
 				return output, err
 			}
 		}
@@ -371,14 +440,15 @@ func (e *Engine) RunStack(name string, data map[string]interface{}) ([]byte, err
 		if strings.HasPrefix(step, "logic/") {
 			logicName := strings.Replace(step, "logic/", "", -1)
 
+			// Ensure that every logic has tests.
+			// Bails if one of them fails.
+			output, err = e.RunPythonLogicTest(logicName)
+			if err != nil {
+				return output, err
+			}
+
 			output, err = e.RunLogic(logicName, data)
 			if err != nil {
-				logrus.WithFields(logrus.Fields{
-					"dryrun": e.DryRun,
-					"error":  err.Error(),
-					"output": string(output),
-				}).Errorf("Unable to run logic: %v", logicName)
-
 				return output, err
 			}
 		}
