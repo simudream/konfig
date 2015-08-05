@@ -43,7 +43,7 @@ func main() {
 	engine.Git.HTTPS = *gitInput
 	engine.Git.Branch = *gitBranchInput
 
-	if *cmdInput == "run" {
+	runBlock := func() {
 		if *stackInput == "" {
 			logrus.Fatal(errors.New("stack name must be specified."))
 		}
@@ -80,14 +80,23 @@ func main() {
 		}
 	}
 
-	if *cmdInput == "pull" {
+	if *cmdInput == "run" {
+		runBlock()
+
+	} else if *cmdInput == "pull" {
 		err := engine.GitPull()
 		if err != nil {
 			logrus.Fatal(err)
 		}
-	}
 
-	if *cmdInput == "new" {
+	} else if *cmdInput == "pull-run" {
+		err := engine.GitPull()
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		runBlock()
+
+	} else if *cmdInput == "new" {
 		err := engine.NewProject()
 		if err != nil {
 			logrus.Fatal(err)

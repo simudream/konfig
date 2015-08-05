@@ -56,11 +56,16 @@ resourced-stacks -h
 # Creating a new project
 resourced-stacks -root=/path/to/project -cmd=new
 
-# Cleaning dirty local changes on remote host
-resourced-stacks -root=/path/to/project -cmd=clean
+# Running on a host
+resourced-stacks -root=/path/to/project -cmd=run -stack=stack-name -dryrun=false
 
-# Running on a host, by default -cmd=run
-resourced-stacks -root=/path/to/project -stack=stack-name
+# Pulling down remote git project onto -root
+resourced-stacks -root=/path/to/project -cmd=pull -git=https://github.com/path/to/project/repo.git
+
+# Pulling down remote git project onto -root & then running it
+# You can run this command under minutely cron to replicate `puppet agent -t` behavior, or
+# you can run it as part of resourced agent.
+resourced-stacks -root=/path/to/project -cmd=pull-run -git=https://github.com/path/to/project/repo.git -stack=stack-name -dryrun=false
 ```
 
 
