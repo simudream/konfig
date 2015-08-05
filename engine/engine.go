@@ -27,23 +27,25 @@ func New(root, conditions string) (*Engine, error) {
 
 	engine := &Engine{Root: root, Hostname: hostname}
 
-	err = os.MkdirAll(root, 0755)
+	for _, subdir := range []string{path.Join(engine.Root, "logic"), path.Join(engine.Root, "stacks")} {
+		err = os.MkdirAll(subdir, 0755)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	logic, err := ioutil.ReadDir(path.Join(engine.Root, "logic"))
 	if err != nil {
 		return nil, err
 	}
 
-	logicDirs, err := ioutil.ReadDir(path.Join(engine.Root, "logic"))
+	stacks, err := ioutil.ReadDir(path.Join(engine.Root, "stacks"))
 	if err != nil {
 		return nil, err
 	}
 
-	stackFiles, err := ioutil.ReadDir(path.Join(engine.Root, "stacks"))
-	if err != nil {
-		return nil, err
-	}
-
-	engine.Logic = logicDirs
-	engine.Stacks = stackFiles
+	engine.Logic = logic
+	engine.Stacks = stacks
 
 	engine.DryRun = true
 	engine.PythonPath = "python"
@@ -104,6 +106,13 @@ func (e *Engine) EvalConditions() (bool, error) {
 }
 
 func (e *Engine) NewProject() error {
+	if e.IsGitRepo() {
+		return errors.New("Project is already versioned on git. Halt.")
+	}
+
+	// 0. Make sure root dir does not exist because we will overwrite it anyway.
+	os.RemoveAll(e.Root)
+
 	// 1. Create tmp directory.
 	dir, err := ioutil.TempDir(os.TempDir(), "resourced-stacks")
 	if err != nil {
@@ -114,7 +123,7 @@ func (e *Engine) NewProject() error {
 	defer os.RemoveAll(dir)
 
 	// 2. git clone to /tmp directory.
-	output, err := exec.Command("git", "clone", "https://github.com/resourced/resourced-stacks.git", dir).CombinedOutput()
+	output, err := exec.Command("git", "clone", "git@github.com:resourced/resourced-stacks.git", dir).CombinedOutput()
 	if err != nil {
 		os.RemoveAll(dir)
 

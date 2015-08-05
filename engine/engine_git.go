@@ -32,6 +32,8 @@ func (e *Engine) GitFetchCheckoutPull() error {
 		return err
 	}
 
+	logrus.Info(string(output))
+
 	// checkout the branch
 	cmd = exec.Command("git", "checkout", e.Git.Branch)
 	cmd.Path = e.Root
@@ -45,6 +47,8 @@ func (e *Engine) GitFetchCheckoutPull() error {
 		return err
 	}
 
+	logrus.Info(string(output))
+
 	// pull the branch
 	cmd = exec.Command("git", "pull", "origin", e.Git.Branch)
 	cmd.Path = e.Root
@@ -57,6 +61,8 @@ func (e *Engine) GitFetchCheckoutPull() error {
 
 		return err
 	}
+
+	logrus.Info(string(output))
 
 	return nil
 }
@@ -80,11 +86,13 @@ func (e *Engine) GitCleanPull() error {
 		return err
 	}
 
+	logrus.Info(string(output))
+
 	err = e.GitFetchCheckoutPull()
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"error": err.Error(),
-		}).Fatal(string(output))
+		}).Fatal("Unabled to pull from git")
 
 		return err
 	}
@@ -99,9 +107,11 @@ func (e *Engine) GitFreshPull() error {
 		return nil
 	}
 
+	// Make sure root dir does not exist because we will overwrite it anyway.
+	os.RemoveAll(e.Root)
+
 	// git clone from HTTPS
-	cmd := exec.Command("git", "clone", e.Git.HTTPS)
-	cmd.Path = e.Root
+	cmd := exec.Command("git", "clone", e.Git.HTTPS, e.Root)
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {

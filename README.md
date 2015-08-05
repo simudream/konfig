@@ -1,9 +1,7 @@
 [![GoDoc](https://godoc.org/github.com/resourced/resourced-stacks?status.svg)](http://godoc.org/github.com/resourced/resourced-stacks)
 [![license](http://img.shields.io/badge/license-MIT-red.svg?style=flat)](https://raw.githubusercontent.com/resourced/resourced-stacks/master/LICENSE)
 
-**ResourceD Stacks:**
-
-Task runner, file stamper, and more.
+**ResourceD Stacks:** Task runner, file stamper, and more.
 
 It is quite possible the simplest configuration management you've ever seen.
 
