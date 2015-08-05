@@ -21,7 +21,7 @@ func (e *Engine) IsGitRepo() bool {
 func (e *Engine) GitFetchCheckoutPull() error {
 	// fetch
 	cmd := exec.Command("git", "fetch", "origin")
-	cmd.Path = e.Root
+	cmd.Dir = e.Root
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -36,7 +36,7 @@ func (e *Engine) GitFetchCheckoutPull() error {
 
 	// checkout the branch
 	cmd = exec.Command("git", "checkout", e.Git.Branch)
-	cmd.Path = e.Root
+	cmd.Dir = e.Root
 
 	output, err = cmd.CombinedOutput()
 	if err != nil {
@@ -51,7 +51,7 @@ func (e *Engine) GitFetchCheckoutPull() error {
 
 	// pull the branch
 	cmd = exec.Command("git", "pull", "origin", e.Git.Branch)
-	cmd.Path = e.Root
+	cmd.Dir = e.Root
 
 	output, err = cmd.CombinedOutput()
 	if err != nil {
@@ -75,7 +75,7 @@ func (e *Engine) GitCleanPull() error {
 
 	// Clean all existing dirty changes
 	cmd := exec.Command("git", "reset", "--hard")
-	cmd.Path = e.Root
+	cmd.Dir = e.Root
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
