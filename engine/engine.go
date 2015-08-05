@@ -27,25 +27,22 @@ func New(root, conditions string) (*Engine, error) {
 
 	engine := &Engine{Root: root, Hostname: hostname}
 
-	for _, subdir := range []string{path.Join(engine.Root, "logic"), path.Join(engine.Root, "stacks")} {
-		err = os.MkdirAll(subdir, 0755)
+	if _, err := os.Stat(path.Join(engine.Root, "logic")); err == nil {
+		logic, err := ioutil.ReadDir(path.Join(engine.Root, "logic"))
 		if err != nil {
 			return nil, err
 		}
+		engine.Logic = logic
 	}
 
-	logic, err := ioutil.ReadDir(path.Join(engine.Root, "logic"))
-	if err != nil {
-		return nil, err
-	}
+	if _, err := os.Stat(path.Join(engine.Root, "stacks")); err == nil {
+		stacks, err := ioutil.ReadDir(path.Join(engine.Root, "stacks"))
+		if err != nil {
+			return nil, err
+		}
 
-	stacks, err := ioutil.ReadDir(path.Join(engine.Root, "stacks"))
-	if err != nil {
-		return nil, err
+		engine.Stacks = stacks
 	}
-
-	engine.Logic = logic
-	engine.Stacks = stacks
 
 	engine.DryRun = true
 	engine.PythonPath = "python"
