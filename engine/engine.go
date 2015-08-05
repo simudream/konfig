@@ -402,6 +402,8 @@ func (e *Engine) RunStack(name string, data map[string]interface{}) ([]byte, err
 		}
 	}
 
+	stackOutput := make([]byte, 0)
+
 	for _, step := range stk.Steps {
 		var output []byte
 		var outputInterface interface{}
@@ -438,8 +440,11 @@ func (e *Engine) RunStack(name string, data map[string]interface{}) ([]byte, err
 				return output, err
 			}
 			data["previous_step"] = outputInterface
+
+			// Append good output to stackOutput
+			stackOutput = append(stackOutput, output...)
 		}
 	}
 
-	return make([]byte, 0), nil
+	return stackOutput, nil
 }
