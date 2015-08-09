@@ -1,7 +1,7 @@
 [![GoDoc](https://godoc.org/github.com/resourced/resourced-stacks?status.svg)](http://godoc.org/github.com/resourced/resourced-stacks)
 [![license](http://img.shields.io/badge/license-MIT-red.svg?style=flat)](https://raw.githubusercontent.com/resourced/resourced-stacks/master/LICENSE)
 
-** Note: Unlike agent and master, ResourceD Stacks is in alpha quality and rapidly changing.**
+**Note: Unlike agent and master, ResourceD Stacks is in alpha quality and rapidly changing.**
 
 **ResourceD Stacks:** Task runner, file stamper, and more...
 
