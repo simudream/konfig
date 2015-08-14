@@ -11,6 +11,8 @@ import argparse
 import json
 import socket
 import jinja2
+import subprocess
+import urllib2
 
 
 class Base(object):
@@ -19,6 +21,7 @@ class Base(object):
         self.hostname = socket.gethostname()
         self._read_data()
         self._setup_template()
+        self._setup_metadata()
 
     def _setup_argsparser(self):
         self.argsparser = argparse.ArgumentParser(description='Logic runner for {0}'.format(self.__class__.__name__))
@@ -31,6 +34,12 @@ class Base(object):
         templates_dir = os.path.join(self.current_dir(), 'templates')
         if os.path.isdir(templates_dir):
             self.template = jinja2.Environment(loader=jinja2.FileSystemLoader(templates_dir), trim_blocks=True)
+
+    def _setup_metadata(self):
+        self.metadata_host = "http://localhost:55555"
+
+    def _metadata_url(self, type_, path):
+        return "{0}/metadata/{1}/{2}".format(self.metadata_host, type_, path)
 
     def _read_data(self):
         self.data = {}
@@ -83,12 +92,18 @@ class Base(object):
         with open(target_path, "wb") as fh:
             fh.write(file_content)
 
+    def metadata_get(self, type_, path):
+        response = urllib2.urlopen(self._metadata_url(type_, path))
+        return response.read()
+
     def exec_with_dryrun(self, command):
         if self.args.dryrun:
-            print(command)
-            return 0
+            return command, 0
         else:
-            return os.system(command)
+            p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+            (output, err) = p.communicate()
+            exit_code = p.wait()
+            return output, exit_code
 
     def dryrun(self):
         output = '{"message": "Success"}'

@@ -38,6 +38,15 @@ class TestBase(unittest.TestCase):
         output = json.loads(self.logic.run())
         self.assertEqual(output["message"], "Success")
 
+    def test_metadata_get(self):
+        # This test as it-is makes 4 assumptions:
+        # 1. resourced agent is running
+        # 2. resourced master is running
+        # 3. users/didip key exists in resourced-master
+        # 4. the value of that key contains the word didip
+        output = self.logic.metadata_get('resourced-master', 'users/didip')
+        self.assertTrue('didip' in output)
+
 
 if __name__ == '__main__':
     unittest.main()
