@@ -12,6 +12,7 @@ import json
 import socket
 import jinja2
 import subprocess
+import urllib2
 
 
 class Base(object):
@@ -20,6 +21,7 @@ class Base(object):
         self.hostname = socket.gethostname()
         self._read_data()
         self._setup_template()
+        self._setup_metadata()
 
     def _setup_argsparser(self):
         self.argsparser = argparse.ArgumentParser(description='Logic runner for {0}'.format(self.__class__.__name__))
@@ -32,6 +34,12 @@ class Base(object):
         templates_dir = os.path.join(self.current_dir(), 'templates')
         if os.path.isdir(templates_dir):
             self.template = jinja2.Environment(loader=jinja2.FileSystemLoader(templates_dir), trim_blocks=True)
+
+    def _setup_metadata(self):
+        self.metadata_host = "http://localhost:55555"
+
+    def _metadata_url(self, type_, path):
+        return "{0}/metadata/{1}/{2}".format(self.metadata_host, type_, path)
 
     def _read_data(self):
         self.data = {}
@@ -83,6 +91,10 @@ class Base(object):
         file_content = self.template.get_template(template_filename).render(**kwargs)
         with open(target_path, "wb") as fh:
             fh.write(file_content)
+
+    def metadata_get(self, type_, path):
+        response = urllib2.urlopen(self._metadata_url(type_, path))
+        return response.read()
 
     def exec_with_dryrun(self, command):
         if self.args.dryrun:
