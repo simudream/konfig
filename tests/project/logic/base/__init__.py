@@ -11,6 +11,7 @@ import argparse
 import json
 import socket
 import jinja2
+import subprocess
 
 
 class Base(object):
@@ -83,12 +84,14 @@ class Base(object):
         with open(target_path, "wb") as fh:
             fh.write(file_content)
 
-    def exec_or_print(self, command):
+    def exec_with_dryrun(self, command):
         if self.args.dryrun:
-            print(command)
-            return 0
+            return command, 0
         else:
-            return os.system(command)
+            p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+            (output, err) = p.communicate()
+            exit_code = p.wait()
+            return output, exit_code
 
     def dryrun(self):
         output = '{"message": "Success"}'

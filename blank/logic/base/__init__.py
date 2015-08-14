@@ -83,7 +83,7 @@ class Base(object):
         with open(target_path, "wb") as fh:
             fh.write(file_content)
 
-    def exec_or_print(self, command):
+    def exec_with_dryrun(self, command):
         if self.args.dryrun:
             print(command)
             return 0

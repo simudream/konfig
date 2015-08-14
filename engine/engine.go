@@ -15,6 +15,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"github.com/Sirupsen/logrus"
 	"github.com/resourced/resourced-stacks/stack"
+	resourced_config "github.com/resourced/resourced/config"
 	"github.com/robertkrimen/otto"
 )
 
@@ -78,6 +79,10 @@ type Engine struct {
 		HTTPS  string
 		Branch string
 	}
+
+	// Engine can have complete list of ResourceD agent configs.
+	// This field is only useful when engine is embedded inside ResourceD agent.
+	ResourcedAgentConfigs *resourced_config.Configs
 
 	jsVM *otto.Otto
 }
@@ -247,12 +252,12 @@ func (e *Engine) InstallPythonLogicDependencies(name string) ([]byte, error) {
 
 	reqPath := path.Join(e.Root, "logic", name, "requirements.txt")
 
-	commandChunks := []string{e.PipPath, "install", "-r", reqPath}
-
 	_, err := os.Stat(reqPath)
 	if err != nil {
-		return nil, err
+		return []byte("There's no requirements.txt"), nil
 	}
+
+	commandChunks := []string{e.PipPath, "install", "-r", reqPath}
 
 	if e.DryRun {
 		logrus.WithFields(logrus.Fields{
@@ -306,10 +311,12 @@ func (e *Engine) RunPythonLogic(name string, data map[string]interface{}) ([]byt
 		logrus.WithFields(logrus.Fields{
 			"dryrun": e.DryRun,
 			"error":  err.Error(),
+			"output": string(output),
 		}).Infof("Failed executing: " + strings.Join(commandChunks, " "))
 	} else {
 		logrus.WithFields(logrus.Fields{
 			"dryrun": e.DryRun,
+			"output": string(output),
 		}).Infof("Executed: " + strings.Join(commandChunks, " "))
 	}
 

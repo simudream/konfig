@@ -12,7 +12,7 @@ It is quite possible the simplest configuration management you've ever seen.
 
 * We are very serious about simple workflow. Logic->Stack, that's all.
 
-    * **Logic:** Write a python script to accomplish a particular task. Use JSON format for both stdin and stdout.
+    * **Logic:** Write a python script to accomplish a particular task. Use JSON for stdin & stdout.
 
     * **Stack:** This is how you can create a mixins of logic and other stacks in sequential order.
 

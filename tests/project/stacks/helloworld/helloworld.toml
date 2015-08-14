@@ -1,3 +1,4 @@
 steps = [
+    "logic/users",
     "logic/helloworld"
 ]

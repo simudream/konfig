@@ -1,0 +1,9 @@
+[
+    {
+        "name": "brad",
+        "uid": 9001,
+        "groups": [9001, "developers", "designers"],
+        "pub_key": "",
+        "shell": "/bin/bash"
+    }
+]
