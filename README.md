@@ -47,14 +47,12 @@ INFO[0002] Executed: python tests/project/logic/helloworld/__init__.py --no-dryr
 * Python and Pip for implementing logic.
 
 
-## CLI mode
-
-### Installation
+## Installation
 
 Download the binary release [here](https://github.com/didip/konfig/releases) and starts using it.
 
 
-### Usage
+## Usage
 ```
 konfig -h
 
