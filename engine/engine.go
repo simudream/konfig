@@ -14,8 +14,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/Sirupsen/logrus"
-	"github.com/resourced/resourced-stacks/stack"
-	resourced_config "github.com/resourced/resourced/config"
+	"github.com/didip/konfig/stack"
 	"github.com/robertkrimen/otto"
 )
 
@@ -80,10 +79,6 @@ type Engine struct {
 		Branch string
 	}
 
-	// Engine can have complete list of ResourceD agent configs.
-	// This field is only useful when engine is embedded inside ResourceD agent.
-	ResourcedAgentConfigs *resourced_config.Configs
-
 	jsVM *otto.Otto
 }
 
@@ -116,7 +111,7 @@ func (e *Engine) NewProject() error {
 	os.RemoveAll(e.Root)
 
 	// 1. Create tmp directory.
-	dir, err := ioutil.TempDir(os.TempDir(), "resourced-stacks")
+	dir, err := ioutil.TempDir(os.TempDir(), "konfig")
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"error": err.Error(),
@@ -125,7 +120,7 @@ func (e *Engine) NewProject() error {
 	defer os.RemoveAll(dir)
 
 	// 2. git clone to /tmp directory.
-	output, err := exec.Command("git", "clone", "git@github.com:resourced/resourced-stacks.git", dir).CombinedOutput()
+	output, err := exec.Command("git", "clone", "git@github.com:didip/konfig.git", dir).CombinedOutput()
 	if err != nil {
 		os.RemoveAll(dir)
 

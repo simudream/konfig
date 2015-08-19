@@ -7,7 +7,7 @@ import (
 )
 
 func TestConstructor(t *testing.T) {
-	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/resourced-stacks/tests/project"), "")
+	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/didip/konfig/tests/project"), "")
 	if err != nil {
 		t.Fatalf("Creating new engine should not fail. Error: %v", err)
 	}
@@ -20,14 +20,14 @@ func TestConstructor(t *testing.T) {
 }
 
 func TestIsGitRepo(t *testing.T) {
-	engine := &Engine{Root: os.ExpandEnv("$GOPATH/src/github.com/resourced/resourced-stacks")}
+	engine := &Engine{Root: os.ExpandEnv("$GOPATH/src/github.com/didip/konfig")}
 	if !engine.IsGitRepo() {
-		t.Fatalf(os.ExpandEnv("$GOPATH/src/github.com/resourced/resourced-stacks should be a git repo."))
+		t.Fatalf(os.ExpandEnv("$GOPATH/src/github.com/didip/konfig should be a git repo."))
 	}
 }
 
 func TestInstallPythonLogicDependencies(t *testing.T) {
-	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/resourced-stacks/tests/project"), "")
+	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/didip/konfig/tests/project"), "")
 	if err != nil {
 		t.Fatalf("Creating new engine should not fail. Error: %v", err)
 	}
@@ -45,7 +45,7 @@ func TestInstallPythonLogicDependencies(t *testing.T) {
 }
 
 func TestRunPythonLogic(t *testing.T) {
-	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/resourced-stacks/tests/project"), "")
+	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/didip/konfig/tests/project"), "")
 	if err != nil {
 		t.Fatalf("Creating new engine should not fail. Error: %v", err)
 	}
@@ -66,7 +66,7 @@ func TestRunPythonLogic(t *testing.T) {
 }
 
 func TestReadStack(t *testing.T) {
-	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/resourced-stacks/tests/project"), "")
+	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/didip/konfig/tests/project"), "")
 	if err != nil {
 		t.Fatalf("Creating new engine should not fail. Error: %v", err)
 	}
@@ -81,7 +81,7 @@ func TestReadStack(t *testing.T) {
 }
 
 func TestRunStack(t *testing.T) {
-	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/resourced/resourced-stacks/tests/project"), "")
+	engine, err := New(os.ExpandEnv("$GOPATH/src/github.com/didip/konfig/tests/project"), "")
 	if err != nil {
 		t.Fatalf("Creating new engine should not fail. Error: %v", err)
 	}

@@ -1,9 +1,7 @@
-[![GoDoc](https://godoc.org/github.com/resourced/resourced-stacks?status.svg)](http://godoc.org/github.com/resourced/resourced-stacks)
-[![license](http://img.shields.io/badge/license-MIT-red.svg?style=flat)](https://raw.githubusercontent.com/resourced/resourced-stacks/master/LICENSE)
+[![GoDoc](https://godoc.org/github.com/didip/konfig?status.svg)](http://godoc.org/github.com/didip/konfig)
+[![license](http://img.shields.io/badge/license-MIT-red.svg?style=flat)](https://raw.githubusercontent.com/didip/konfig/master/LICENSE)
 
-**Note: Unlike agent and master, ResourceD Stacks is in alpha quality and rapidly changing.**
-
-**ResourceD Stacks:** Task runner, file stamper, and more...
+**Konfig:** Task runner, file stamper, and more...
 
 It is quite possible the simplest configuration management you've ever seen.
 
@@ -27,7 +25,7 @@ It is quite possible the simplest configuration management you've ever seen.
 
 ## Example when running locally
 ```
-resourced-stacks -root=./tests/project -cmd=run -stack=helloworld -dryrun=false
+konfig -root=./tests/project -cmd=run -stack=helloworld -dryrun=false
 INFO[0000] Starting stack: helloworld                                                dryrun=false
 INFO[0000] Reading data for stack: helloworld                                        dryrun=false
 INFO[0000] Running tests for logic: helloworld                                       dryrun=false
@@ -53,35 +51,23 @@ INFO[0002] Executed: python tests/project/logic/helloworld/__init__.py --no-dryr
 
 ### Installation
 
-Download the binary release [here](https://github.com/resourced/resourced-stacks/releases) and starts using it.
+Download the binary release [here](https://github.com/didip/konfig/releases) and starts using it.
 
 
 ### Usage
 ```
-resourced-stacks -h
+konfig -h
 
 # Creating a new project
-resourced-stacks -root=/path/to/project -cmd=new
+konfig -root=/path/to/project -cmd=new
 
 # Running on a host
-resourced-stacks -root=/path/to/project -cmd=run -stack=stack-name -dryrun=false
+konfig -root=/path/to/project -cmd=run -stack=stack-name -dryrun=false
 
 # Pulling down remote git project onto -root
-resourced-stacks -root=/path/to/project -cmd=pull -git=https://github.com/path/to/project/repo.git
+konfig -root=/path/to/project -cmd=pull -git=https://github.com/path/to/project/repo.git
 
 # Pulling down remote git project onto -root & then running it
-# You can run this command under minutely cron to replicate `puppet agent -t` behavior, or
-# you can run it as part of resourced agent.
-resourced-stacks -root=/path/to/project -cmd=pull-run -git=https://github.com/path/to/project/repo.git -stack=stack-name -dryrun=false
+# You can run this command under minutely cron to replicate `puppet agent -t` behavior
+konfig -root=/path/to/project -cmd=pull-run -git=https://github.com/path/to/project/repo.git -stack=stack-name -dryrun=false
 ```
-
-
-## Agent mode
-
-### Installation
-
-1. Download ResourceD binary release [here](https://github.com/resourced/resourced/releases).
-
-2. Configure ResourceD Executor to run your stacks.
-
-3. Run ResourceD.

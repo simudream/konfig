@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/resourced/resourced-stacks/engine"
+	"github.com/didip/konfig/engine"
 )
 
 func main() {

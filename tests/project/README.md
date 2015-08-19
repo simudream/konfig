@@ -1,4 +1,4 @@
-This directory serves as a complete example of resourced-stacks project.
+This directory serves as a complete example of konfig project.
 
 ## Testing commands
 ```

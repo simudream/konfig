@@ -14,6 +14,7 @@ sys.path.append(os.path.join(os.path.dirname(os.path.realpath(__file__)), '..'))
 
 import base
 
+
 class TestBase(unittest.TestCase):
     def setUp(self):
         s = StringIO.StringIO('{"users": [{"name": "didip"}, {"name": "brotato"}]}')
@@ -29,7 +30,7 @@ class TestBase(unittest.TestCase):
         try:
             s = StringIO.StringIO('awesome')
             sys.stdin = s
-            b = base.Base()
+            base.Base()
             sys.stdin = sys.__stdin__
         except SystemExit:
             self.assertTrue("system exited because input from stdin is not in JSON format")
